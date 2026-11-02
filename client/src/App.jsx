@@ -1,7 +1,7 @@
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import {
-  Ellipsis, Gift, History, LayoutDashboard, MapPin, QrCode, ReceiptText, ScanLine, ScrollText,
-  SlidersHorizontal, Store, Tag, Trophy,
+  Ellipsis, Gift, History, LayoutDashboard, QrCode, ReceiptText, ScanLine, ScrollText,
+  Store, Trophy,
 } from 'lucide-react';
 import { AppShell } from './components/layout/AppShell.jsx';
 import { Spinner } from './components/ui/Spinner.jsx';
@@ -30,6 +30,7 @@ import OwnerLocations from './pages/owner/OwnerLocations.jsx';
 import OwnerMore from './pages/owner/OwnerMore.jsx';
 
 import AdminTenants from './pages/AdminTenants.jsx';
+import { OWNER_SECONDARY_NAV } from './pages/owner/nav.js';
 
 const GUEST_NAV = [
   { to: '/gost', label: 'Moja kartica', shortLabel: 'Kartica', icon: QrCode, end: true },
@@ -43,12 +44,6 @@ const WAITER_NAV = [
   { to: '/konobar/nagrade', label: 'Iskorištavanje nagrade', shortLabel: 'Nagrade', icon: Gift },
 ];
 
-export const OWNER_SECONDARY_NAV = [
-  { to: '/vlasnik/postavke', label: 'Postavke programa', icon: SlidersHorizontal, description: 'Bodovanje, istek, happy hour, limiti' },
-  { to: '/vlasnik/nagrade', label: 'Nagrade', icon: Gift, description: 'Katalog nagrada i nabavne cijene' },
-  { to: '/vlasnik/cjenik', label: 'Cjenik', icon: Tag, description: 'Artikli, cijene i bodovi po artiklu' },
-  { to: '/vlasnik/lokacije', label: 'Lokacije i osoblje', icon: MapPin, description: 'Lokacije u programu i konobari' },
-];
 
 const OWNER_NAV = [
   { to: '/vlasnik', label: 'Pregled', icon: LayoutDashboard, end: true },

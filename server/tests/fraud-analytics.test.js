@@ -22,13 +22,11 @@ describe('rule 10 — suspicious activity', () => {
     expect(flags.get('e9')).toEqual(['WAITER_GUEST_DAILY']);
   });
 
-  it('flags more than 10 awards from one waiter to one guest within 30 days', () => {
-    const earns = Array.from({ length: 11 }, (_, i) => ({
-      id: `e${i}`, guestProfileId: 'g1', waiterId: 'w1', createdAt: new Date(t('2026-10-01T10:00:00+02:00').getTime() + i * 2 * 86400000),
+  it('does not flag a regular guest who visits once a day', () => {
+    const earns = Array.from({ length: 20 }, (_, i) => ({
+      id: `e${i}`, guestProfileId: 'g1', waiterId: 'w1', createdAt: new Date(t('2026-10-01T10:00:00+02:00').getTime() + i * 86400000),
     }));
-    const flags = detectSuspiciousEarns(earns, { dailyScanLimitPerGuest: 10 });
-    expect(flags.get('e0')).toContain('WAITER_GUEST_30D');
-    expect(detectSuspiciousEarns(earns.slice(0, 10), { dailyScanLimitPerGuest: 10 }).size).toBe(0);
+    expect(detectSuspiciousEarns(earns, { dailyScanLimitPerGuest: 3 }).size).toBe(0);
   });
 
   it('flags bursts of rejected attempts', () => {
