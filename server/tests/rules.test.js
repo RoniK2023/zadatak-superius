@@ -57,9 +57,24 @@ describe('earning a receipt', () => {
     expect(earn({ receipt, now: MON_17_30 })).toMatchObject({ ok: false, reason: REASONS.HAPPY_HOUR });
   });
 
-  it('rule 4 — happy hour is decided by when the receipt was issued, not when it is scanned', () => {
+  it('rule 4 — while happy hour is active, nothing is awarded, even for a receipt issued before it', () => {
     const receipt = makeReceipt({ paidAt: at('2026-11-02T16:50:00+01:00'), isHappyHour: false });
-    expect(earn({ receipt, now: MON_17_30 })).toMatchObject({ ok: true });
+    expect(earn({ receipt, now: MON_17_30 })).toMatchObject({ ok: false, reason: REASONS.HAPPY_HOUR });
+  });
+
+  it('rule 4 — a receipt issued during happy hour stays without points after happy hour ends', () => {
+    const receipt = makeReceipt({ paidAt: MON_17_30, isHappyHour: true });
+    expect(earn({ receipt, now: at('2026-11-02T19:30:00+01:00') })).toMatchObject({ ok: false, reason: REASONS.HAPPY_HOUR });
+  });
+
+  it('rule 4 — a receipt issued before happy hour can be awarded once happy hour is over', () => {
+    const receipt = makeReceipt({ paidAt: at('2026-11-02T16:50:00+01:00'), isHappyHour: false });
+    expect(earn({ receipt, now: at('2026-11-02T19:05:00+01:00') })).toMatchObject({ ok: true, points: 12 });
+  });
+
+  it('rule 4 — disabled happy hour never blocks', () => {
+    const receipt = makeReceipt({ paidAt: at('2026-11-02T16:50:00+01:00'), isHappyHour: false });
+    expect(earn({ receipt, now: MON_17_30, settings: { ...settings, happyHourEnabled: false } })).toMatchObject({ ok: true });
   });
 
   it('rule 5 — a location outside the program cannot earn', () => {

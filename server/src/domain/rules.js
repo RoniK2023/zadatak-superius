@@ -28,8 +28,9 @@ const reject = (reason) => ({ ok: false, reason, message: REASON_MESSAGES[reason
 
 /**
  * Can this receipt earn points? (rules 2, 3, 4, 5, 9)
- * The happy-hour check uses the time the receipt was issued (receipt.isHappyHour,
- * or recomputed from paidAt when settings are provided).
+ * Happy hour blocks points in two ways:
+ *  - while happy hour is active, nothing can be awarded (whenever the receipt was issued);
+ *  - a receipt issued during happy hour never earns points, also after happy hour ends.
  */
 export function evaluateEarn({ receipt, waiter, location, alreadyAwarded, settings, now = new Date() }) {
   if (!location.programEnabled) return reject(REASONS.LOCATION_NOT_IN_PROGRAM);
@@ -37,6 +38,7 @@ export function evaluateEarn({ receipt, waiter, location, alreadyAwarded, settin
   if (!isSameZagrebDay(receipt.paidAt, now)) return reject(REASONS.RECEIPT_NOT_TODAY);
   if (alreadyAwarded) return reject(REASONS.RECEIPT_ALREADY_AWARDED);
 
+  if (settings && isHappyHourAt(now, settings)) return reject(REASONS.HAPPY_HOUR);
   const issuedInHappyHour = receipt.isHappyHour ?? (settings ? isHappyHourAt(receipt.paidAt, settings) : false);
   if (issuedInHappyHour) return reject(REASONS.HAPPY_HOUR);
 

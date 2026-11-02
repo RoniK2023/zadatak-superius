@@ -8,7 +8,7 @@ import { Card, CardHeader } from '../../components/ui/Card.jsx';
 import { Modal } from '../../components/ui/Modal.jsx';
 import { EmptyState, ErrorState, Notice, Skeleton, SkeletonList } from '../../components/ui/States.jsx';
 import { useToast } from '../../components/ui/Toast.jsx';
-import { WaiterStatus } from '../../components/WaiterStatus.jsx';
+import { WaiterStatus, loyaltyBlocked, useWaiterContext } from '../../components/WaiterStatus.jsx';
 import { api } from '../../lib/api.js';
 import { cx, formatMoney, formatPoints, formatTime } from '../../lib/format.js';
 import { useApi } from '../../lib/useApi.js';
@@ -17,7 +17,8 @@ import { useApi } from '../../lib/useApi.js';
 export default function WaiterRegister() {
   const toast = useToast();
   const navigate = useNavigate();
-  const context = useApi('/waiter/context');
+  const context = useWaiterContext();
+  const blocked = loyaltyBlocked(context.data);
   const products = useApi('/waiter/products');
   const receipts = useApi('/waiter/receipts');
   const [cart, setCart] = useState({}); // productId -> quantity
@@ -164,7 +165,7 @@ export default function WaiterRegister() {
         </Card>
       </div>
 
-      <TodayReceipts receipts={receipts} onAward={(id) => navigate(`/konobar/bodovi?racun=${id}`)} />
+      <TodayReceipts receipts={receipts} blocked={blocked} onAward={(id) => navigate(`/konobar/bodovi?racun=${id}`)} />
 
       {/* Mobile: total + primary action within thumb reach, above the bottom navigation */}
       {lines.length > 0 && <div className="h-20 lg:hidden" aria-hidden />}
@@ -192,20 +193,24 @@ export default function WaiterRegister() {
             <Button variant="secondary" size="lg" onClick={() => setIssued(null)} className="sm:h-11 sm:text-sm">
               Novi račun
             </Button>
-            <Button
-              size="lg"
-              icon={ScanLine}
-              data-autofocus
-              className="sm:h-11 sm:text-sm"
-              onClick={() => navigate(`/konobar/bodovi?racun=${issued.id}`)}
-            >
-              Dodaj bodove gostu
-            </Button>
+            {!issued?.isHappyHour && !blocked && (
+              <Button
+                size="lg"
+                icon={ScanLine}
+                data-autofocus
+                className="sm:h-11 sm:text-sm"
+                onClick={() => navigate(`/konobar/bodovi?racun=${issued.id}`)}
+              >
+                Dodaj bodove gostu
+              </Button>
+            )}
           </>
         }
       >
         {issued?.isHappyHour ? (
           <Notice tone="warning">Račun je izdan u happy houru i ne nosi bodove.</Notice>
+        ) : blocked ? (
+          <Notice tone="warning">Bodovi se trenutno ne mogu dodijeliti.</Notice>
         ) : (
           <p className="text-sm text-ink-muted">
             Ako je gost član programa, skenirajte njegov QR kod. Ovaj račun nosi{' '}
@@ -219,7 +224,7 @@ export default function WaiterRegister() {
 
 const PREVIEW = 6;
 
-function TodayReceipts({ receipts, onAward }) {
+function TodayReceipts({ receipts, onAward, blocked }) {
   const [showAll, setShowAll] = useState(false);
   const list = receipts.data ?? [];
   const visible = showAll ? list : list.slice(0, PREVIEW);
@@ -250,6 +255,8 @@ function TodayReceipts({ receipts, onAward }) {
                   </Badge>
                 ) : r.isHappyHour ? (
                   <Badge tone="warning">Happy hour</Badge>
+                ) : blocked ? (
+                  <Badge>Čeka bodove</Badge>
                 ) : (
                   <Button variant="secondary" size="sm" icon={ScanLine} onClick={() => onAward(r.id)}>
                     Dodaj bodove

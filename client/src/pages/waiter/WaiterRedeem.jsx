@@ -4,7 +4,7 @@ import { PageHeader } from '../../components/layout/PageHeader.jsx';
 import { Avatar } from '../../components/layout/AppShell.jsx';
 import { QrScanner } from '../../components/QrScanner.jsx';
 import { ResultPanel, ResultStats } from '../../components/ResultPanel.jsx';
-import { WaiterStatus } from '../../components/WaiterStatus.jsx';
+import { LoyaltyBlocked, loyaltyBlocked, useWaiterContext } from '../../components/WaiterStatus.jsx';
 import { Badge } from '../../components/ui/Badge.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { Card, CardBody, CardHeader } from '../../components/ui/Card.jsx';
@@ -13,7 +13,6 @@ import { EmptyState, Notice } from '../../components/ui/States.jsx';
 import { useToast } from '../../components/ui/Toast.jsx';
 import { api } from '../../lib/api.js';
 import { formatDay, formatPoints, pointsLabel } from '../../lib/format.js';
-import { useApi } from '../../lib/useApi.js';
 
 const BLOCKED_LABELS = {
   HAPPY_HOUR: 'Happy hour',
@@ -24,7 +23,7 @@ const BLOCKED_LABELS = {
 /** Redeem a reward: scan QR → balance + available rewards → confirm → result. */
 export default function WaiterRedeem() {
   const toast = useToast();
-  const context = useApi('/waiter/context');
+  const context = useWaiterContext();
   const [code, setCode] = useState(null);
   const [data, setData] = useState(null);
   const [scanError, setScanError] = useState(null);
@@ -124,9 +123,9 @@ export default function WaiterRedeem() {
   return (
     <>
       <PageHeader title="Iskoristi nagradu" description="Skenirajte QR kod gosta, provjerite stanje i potvrdite nagradu." />
-      <WaiterStatus context={context.data} mode="redeem" />
-
-      {!data ? (
+      {loyaltyBlocked(context.data) ? (
+        <LoyaltyBlocked context={context.data} />
+      ) : !data ? (
         <Card className="mx-auto max-w-xl">
           <CardHeader title="Gost" description="QR kod iz aplikacije ili s PDF kartice." />
           <CardBody className="space-y-4 pt-1 sm:pt-1">

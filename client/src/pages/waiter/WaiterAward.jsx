@@ -4,7 +4,7 @@ import { ArrowRight, ReceiptText, RotateCw } from 'lucide-react';
 import { PageHeader } from '../../components/layout/PageHeader.jsx';
 import { QrScanner } from '../../components/QrScanner.jsx';
 import { ResultPanel, ResultStats } from '../../components/ResultPanel.jsx';
-import { WaiterStatus } from '../../components/WaiterStatus.jsx';
+import { LoyaltyBlocked, loyaltyBlocked, useWaiterContext } from '../../components/WaiterStatus.jsx';
 import { Badge } from '../../components/ui/Badge.jsx';
 import { Button, ButtonLink } from '../../components/ui/Button.jsx';
 import { Card, CardBody, CardHeader } from '../../components/ui/Card.jsx';
@@ -18,7 +18,7 @@ import { useApi } from '../../lib/useApi.js';
 export default function WaiterAward() {
   const toast = useToast();
   const [params, setParams] = useSearchParams();
-  const context = useApi('/waiter/context');
+  const context = useWaiterContext();
   const receipts = useApi('/waiter/receipts', { status: 'open' });
   const [selectedId, setSelectedId] = useState(params.get('racun'));
   const [busy, setBusy] = useState(false);
@@ -64,10 +64,10 @@ export default function WaiterAward() {
   return (
     <>
       <PageHeader title="Dodaj bodove" description="Odaberite današnji račun i skenirajte QR kod gosta. Bodovi se računaju automatski iz računa." />
-      <WaiterStatus context={context.data} mode="earn" />
-
       {result ? (
         <AwardResult result={result} onNext={reset} onRetry={() => setResult(null)} />
+      ) : loyaltyBlocked(context.data) ? (
+        <LoyaltyBlocked context={context.data} />
       ) : (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start">
           <Card>
