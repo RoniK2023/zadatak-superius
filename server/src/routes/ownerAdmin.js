@@ -48,7 +48,6 @@ const settingsSchema = z
     happyHourStart: z.string().refine((v) => parseHHMM(v) !== null, 'Vrijeme u obliku HH:MM.'),
     happyHourEnd: z.string().refine((v) => parseHHMM(v) !== null, 'Vrijeme u obliku HH:MM.'),
     happyHourDays: z.array(z.number().int().min(1).max(7)).max(7),
-    dailyScanLimitPerGuest: int(1, 50, 'Između 1 i 50.'),
   })
   .superRefine((s, ctx) => {
     const req = (field, message) => ctx.addIssue({ code: 'custom', path: [field], message });

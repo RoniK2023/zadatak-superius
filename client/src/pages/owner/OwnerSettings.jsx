@@ -18,7 +18,7 @@ const DAYS = [
 
 const FIELDS = [
   'earningMode', 'pointsPerEuro', 'expiryMode', 'expiryDay', 'expiryMonth', 'expiryPeriodMonths', 'expiryInactivityMonths',
-  'programStartAt', 'happyHourEnabled', 'happyHourStart', 'happyHourEnd', 'happyHourDays', 'dailyScanLimitPerGuest',
+  'programStartAt', 'happyHourEnabled', 'happyHourStart', 'happyHourEnd', 'happyHourDays',
 ];
 
 const toForm = (s) => Object.fromEntries(FIELDS.map((k) => [k, s[k] ?? '']));
@@ -59,8 +59,6 @@ export default function OwnerSettings() {
       if (!form.happyHourDays.length) e.happyHourDays = 'Odaberite barem jedan dan.';
       if (form.happyHourStart === form.happyHourEnd) e.happyHourEnd = 'Kraj mora biti različit od početka.';
     }
-    if (!(Number.isInteger(num(form.dailyScanLimitPerGuest)) && num(form.dailyScanLimitPerGuest) >= 1))
-      e.dailyScanLimitPerGuest = 'Unesite cijeli broj (1 ili više).';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -83,7 +81,6 @@ export default function OwnerSettings() {
           expiryMonth: intOrNull(form.expiryMonth),
           expiryPeriodMonths: intOrNull(form.expiryPeriodMonths),
           expiryInactivityMonths: intOrNull(form.expiryInactivityMonths),
-          dailyScanLimitPerGuest: Number(form.dailyScanLimitPerGuest),
         },
       });
       setData(result.settings);
@@ -118,7 +115,7 @@ export default function OwnerSettings() {
   if (loading || !form) {
     return (
       <>
-        <PageHeader title="Postavke programa" description="Pravila bodovanja, istek bodova, happy hour i zaštita od zloupotrebe." />
+        <PageHeader title="Postavke programa" description="Pravila bodovanja, istek bodova i happy hour." />
         <div className="space-y-6">
           {[0, 1, 2].map((i) => (
             <Card key={i}>
@@ -140,7 +137,7 @@ export default function OwnerSettings() {
     <form onSubmit={save} noValidate className="max-w-3xl">
       <PageHeader
         title="Postavke programa"
-        description="Pravila bodovanja, istek bodova, happy hour i zaštita od zloupotrebe."
+        description="Pravila bodovanja, istek bodova i happy hour."
         actions={
           <Button type="submit" icon={Save} loading={saving} disabled={!dirty} className="hidden lg:inline-flex">
             Spremi promjene
@@ -292,21 +289,6 @@ export default function OwnerSettings() {
                 {errors.happyHourDays && <p className="mt-1.5 text-sm text-danger">{errors.happyHourDays}</p>}
               </div>
             </fieldset>
-          </CardBody>
-        </Card>
-
-        <Card>
-          <CardHeader title="Zaštita od zloupotrebe" description="Prag za označavanje sumnjivih aktivnosti u logu." />
-          <CardBody className="space-y-4 border-t border-line">
-            <Input
-              label="Najviše dodjela bodova po gostu dnevno"
-              className="max-w-xs"
-              inputMode="numeric"
-              value={form.dailyScanLimitPerGuest}
-              onChange={onInput('dailyScanLimitPerGuest')}
-              error={errors.dailyScanLimitPerGuest}
-              hint="Više dodjela od ovoga isti dan označava se kao sumnjivo (dodjela se ne blokira)."
-            />
           </CardBody>
         </Card>
 

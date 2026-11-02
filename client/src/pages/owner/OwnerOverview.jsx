@@ -1,23 +1,13 @@
 import { Link } from 'react-router-dom';
-import { ChevronRight, ScrollText, ShieldAlert, Trophy } from 'lucide-react';
+import { ChevronRight, ScrollText, Trophy } from 'lucide-react';
 import { PageHeader } from '../../components/layout/PageHeader.jsx';
 import { Avatar } from '../../components/layout/AppShell.jsx';
-import { Badge } from '../../components/ui/Badge.jsx';
 import { Card, CardHeader } from '../../components/ui/Card.jsx';
 import { EmptyState, ErrorState, Skeleton, SkeletonList } from '../../components/ui/States.jsx';
 import { cx, formatDate, formatMoney, formatNumber, formatShortDateTime, pointsLabel } from '../../lib/format.js';
 import { useApi } from '../../lib/useApi.js';
 import { PeriodFilter, useFilterOptions, useOwnerFilters } from './filters.jsx';
 import { TYPE_META, describeActivity } from './activityMeta.js';
-
-/** Croatian plural for "sumnjiva dodjela": 1 sumnjiva, 2–4 sumnjive, 5+ sumnjivih. */
-const suspiciousLabel = (n) => {
-  const m10 = n % 10;
-  const m100 = n % 100;
-  if (m10 === 1 && m100 !== 11) return 'sumnjiva';
-  if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return 'sumnjive';
-  return 'sumnjivih';
-};
 
 const percent = (x) => new Intl.NumberFormat('hr-HR', { style: 'percent', maximumFractionDigits: 1 }).format(x);
 
@@ -107,18 +97,7 @@ export default function OwnerOverview() {
               <CardHeader
                 title="Nedavna aktivnost"
                 description="Dodjele, nagrade i istekli bodovi"
-                actions={
-                  <>
-                    {k?.flaggedTransactions > 0 && (
-                      <Link to="/vlasnik/aktivnost?sumnjivo=1" className="rounded-sm" title="Prikaži sumnjive aktivnosti">
-                        <Badge tone="warning" icon={ShieldAlert}>
-                          {k.flaggedTransactions} {suspiciousLabel(k.flaggedTransactions)}
-                        </Badge>
-                      </Link>
-                    )}
-                    <MoreLink to="/vlasnik/aktivnost">Sve</MoreLink>
-                  </>
-                }
+                actions={<MoreLink to="/vlasnik/aktivnost">Sve</MoreLink>}
               />
               {loading ? (
                 <SkeletonList rows={5} />

@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { ScrollText, ShieldAlert } from 'lucide-react';
+import { ScrollText } from 'lucide-react';
 import { PageHeader } from '../../components/layout/PageHeader.jsx';
 import { Badge } from '../../components/ui/Badge.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { Card, CardHeader } from '../../components/ui/Card.jsx';
 import { DataList } from '../../components/ui/DataList.jsx';
-import { Select, Switch } from '../../components/ui/Field.jsx';
+import { Select } from '../../components/ui/Field.jsx';
 import { EmptyState, ErrorState, SkeletonList } from '../../components/ui/States.jsx';
 import { useToast } from '../../components/ui/Toast.jsx';
 import { api } from '../../lib/api.js';
@@ -18,16 +17,14 @@ const PAGE = 50;
 
 export default function OwnerActivity() {
   const toast = useToast();
-  const [params, setParams] = useSearchParams();
   const { filters, update, query } = useOwnerFilters();
   const options = useFilterOptions();
   const [extra, setExtra] = useState({ waiterId: '', guestId: '', type: '' });
-  const flagged = params.get('sumnjivo') === '1';
   const [state, setState] = useState({ loading: true, error: null, data: null });
   const [loadingMore, setLoadingMore] = useState(false);
   const [nonce, setNonce] = useState(0);
 
-  const fullQuery = { ...query, ...extra, flagged: flagged ? '1' : undefined, limit: PAGE };
+  const fullQuery = { ...query, ...extra, limit: PAGE };
   const key = JSON.stringify(fullQuery);
 
   useEffect(() => {
@@ -55,7 +52,6 @@ export default function OwnerActivity() {
 
   const retry = () => setNonce((n) => n + 1);
   const { data, loading, error } = state;
-  const labels = data?.flagLabels ?? {};
 
   const columns = [
     {
@@ -96,15 +92,8 @@ export default function OwnerActivity() {
       className: 'w-full max-w-0',
       render: (i) => (
         <span className="block">
-          <span className="flex items-center gap-2">
-            <span className={cx('truncate', i.type === 'REJECTED' ? 'text-danger' : 'text-ink')} title={describeActivity(i)}>
-              {describeActivity(i)}
-            </span>
-            {i.flags.length > 0 && (
-              <Badge tone="warning" icon={ShieldAlert} title={i.flags.map((f) => labels[f] ?? f).join(' · ')}>
-                Sumnjivo
-              </Badge>
-            )}
+          <span className={cx('block truncate', i.type === 'REJECTED' ? 'text-danger' : 'text-ink')} title={describeActivity(i)}>
+            {describeActivity(i)}
           </span>
         </span>
       ),
@@ -125,7 +114,7 @@ export default function OwnerActivity() {
         filters={filters}
         update={update}
         locations={options.data?.locations}
-        activeExtra={[extra.waiterId, extra.guestId, extra.type, flagged].filter(Boolean).length}
+        activeExtra={[extra.waiterId, extra.guestId, extra.type].filter(Boolean).length}
       >
         <Select label="Konobar" className="lg:w-44" value={extra.waiterId} onChange={(e) => setExtra((x) => ({ ...x, waiterId: e.target.value }))}>
           <option value="">Svi konobari</option>
@@ -150,46 +139,7 @@ export default function OwnerActivity() {
           <option value="EXPIRE">Istek</option>
           <option value="REJECTED">Odbijeni pokušaji</option>
         </Select>
-        <div className="lg:ml-auto lg:pb-2">
-          <Switch
-            label="Samo sumnjivo"
-            checked={flagged}
-            onChange={(on) => setParams(on ? { sumnjivo: '1' } : {}, { replace: true })}
-          />
-        </div>
       </PeriodFilter>
-
-      {data?.suspicious?.length > 0 && (
-        <Card className="mb-6">
-          <CardHeader
-            title="Sumnjive aktivnosti"
-            description={`Pragovi: gost bodovan više od ${data.thresholds.dailyScanLimitPerGuest}× dnevno · isti konobar istom gostu više od ${data.thresholds.waiterGuestPerDay}× dnevno · ${data.thresholds.rejectedPerDay}+ odbijena pokušaja dnevno.`}
-          />
-          <ul className="divide-y divide-line border-t border-line">
-            {data.suspicious.map((p) => (
-              <li key={`${p.waiter.id}-${p.guest.id}`} className="flex flex-wrap items-center gap-3 px-4 py-3 sm:px-5">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-warning-soft text-warning ring-1 ring-inset ring-warning-line">
-                  <ShieldAlert className="h-4 w-4" aria-hidden />
-                </span>
-                <p className="min-w-0 flex-1 text-sm text-ink">
-                  <span className="font-semibold">{p.waiter.name}</span> → <span className="font-semibold">{p.guest.name}</span>
-                  <span className="text-ink-muted">
-                    {' '}
-                    · {p.earns} označenih dodjela{p.rejected ? ` · ${p.rejected} odbijenih pokušaja` : ''}
-                  </span>
-                </p>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setExtra((x) => ({ ...x, waiterId: p.waiter.id, guestId: p.guest.id, type: '' }))}
-                >
-                  Prikaži
-                </Button>
-              </li>
-            ))}
-          </ul>
-        </Card>
-      )}
 
       <Card>
         <CardHeader
@@ -203,16 +153,13 @@ export default function OwnerActivity() {
         ) : data.items.length === 0 ? (
           <EmptyState
             icon={ScrollText}
-            title={flagged ? 'Nema sumnjivih aktivnosti' : 'Nema aktivnosti'}
+            title="Nema aktivnosti"
             description="Za odabrane filtre nema zapisa. Promijenite razdoblje ili filtre."
             action={
-              (extra.waiterId || extra.guestId || extra.type || flagged) && (
+              (extra.waiterId || extra.guestId || extra.type) && (
                 <Button
                   variant="secondary"
-                  onClick={() => {
-                    setExtra({ waiterId: '', guestId: '', type: '' });
-                    setParams({}, { replace: true });
-                  }}
+                  onClick={() => setExtra({ waiterId: '', guestId: '', type: '' })}
                 >
                   Očisti filtre
                 </Button>

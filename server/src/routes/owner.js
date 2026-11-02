@@ -5,15 +5,12 @@ import { parsePeriod } from '../lib/period.js';
 import { requireAuth } from '../middleware/auth.js';
 import { aggregateTopGuests, estimateLiability } from '../domain/analytics.js';
 import { evaluateExpiry } from '../domain/expiry.js';
-import { FLAG_LABELS, FRAUD_THRESHOLDS, detectSuspiciousAttempts, detectSuspiciousEarns } from '../domain/fraud.js';
 import { REASON_MESSAGES } from '../domain/rules.js';
 import { getSettings } from '../services/loyalty.js';
 
 /** Owner analytics — every query is scoped to req.user.tenantId (never taken from the client). */
 export const ownerRouter = Router();
 ownerRouter.use(requireAuth('OWNER'));
-
-const DAY_MS = 86_400_000;
 
 /** Validates an optional id filter against the owner's tenant. */
 async function tenantScopedId(model, id, tenantId, extra = {}) {
@@ -66,14 +63,6 @@ async function computeLiability(tenantId, settings, now) {
   return { ...estimateLiability(totalPoints, rewards), guestsWithPoints: valid.length };
 }
 
-async function suspiciousEarnFlags(tenantId, settings, from, to) {
-  const earns = await prisma.pointTransaction.findMany({
-    where: { tenantId, type: 'EARN', createdAt: { gte: new Date(from.getTime() - FRAUD_THRESHOLDS.windowDays * DAY_MS), lte: to } },
-    select: { id: true, guestProfileId: true, waiterId: true, createdAt: true },
-  });
-  return { flags: detectSuspiciousEarns(earns, settings), earns };
-}
-
 ownerRouter.get('/overview', async (req, res) => {
   const { tenantId } = req.user;
   const period = parsePeriod(req.query);
@@ -82,7 +71,7 @@ ownerRouter.get('/overview', async (req, res) => {
   const now = new Date();
   const where = { tenantId, createdAt: { gte: period.from, lte: period.to }, ...(locationId ? { locationId } : {}) };
 
-  const [earns, redeems, expired, totalMembers, liability, lookup, recent, attemptsCount] = await Promise.all([
+  const [earns, redeems, expired, totalMembers, liability, lookup, recent] = await Promise.all([
     prisma.pointTransaction.findMany({
       where: { ...where, type: 'EARN' },
       select: { guestProfileId: true, points: true, createdAt: true, locationId: true, receipt: { select: { totalCents: true } } },
@@ -100,14 +89,7 @@ ownerRouter.get('/overview', async (req, res) => {
       take: 8,
       include: { reward: { select: { name: true } }, receipt: { select: { number: true, totalCents: true } } },
     }),
-    prisma.scanAttempt.count({ where }),
   ]);
-
-  const { flags } = await suspiciousEarnFlags(tenantId, settings, period.from, period.to);
-  const inRange = [...flags.keys()];
-  const flaggedInPeriod = inRange.length
-    ? await prisma.pointTransaction.count({ where: { ...where, id: { in: inRange } } })
-    : 0;
 
   const spendingCents = earns.reduce((s, t) => s + (t.receipt?.totalCents ?? 0), 0);
   const costCents = redeems.reduce((s, t) => s + (t.costCents ?? 0), 0);
@@ -128,8 +110,6 @@ ownerRouter.get('/overview', async (req, res) => {
       pointsRedeemed: -redeems.reduce((s, t) => s + t.points, 0),
       pointsExpired: -expired.reduce((s, t) => s + t.points, 0),
       liability,
-      flaggedTransactions: flaggedInPeriod,
-      rejectedAttempts: attemptsCount,
     },
     topGuests: top.map((g) => ({
       ...g,
@@ -181,8 +161,8 @@ ownerRouter.get('/top-guests', async (req, res) => {
 const TYPES = ['EARN', 'REDEEM', 'EXPIRE', 'REJECTED'];
 
 /**
- * Activity log: point transactions + rejected attempts, merged and newest first,
- * with suspicious-activity flags. Filters: period, location, waiter, guest, type, flagged.
+ * Activity log: point transactions + rejected attempts, merged and newest first.
+ * Filters: period, location, waiter, guest, type.
  */
 ownerRouter.get('/activity', async (req, res) => {
   const { tenantId } = req.user;
@@ -193,12 +173,10 @@ ownerRouter.get('/activity', async (req, res) => {
     tenantScopedId('guestProfile', req.query.guestId, tenantId),
   ]);
   const type = TYPES.includes(req.query.type) ? req.query.type : null;
-  const onlyFlagged = req.query.flagged === '1';
   const limit = Math.min(100, Math.max(10, Number(req.query.limit) || 50));
   const offset = Math.max(0, Number(req.query.offset) || 0);
   const cap = 2000;
 
-  const settings = await getSettings(tenantId);
   const base = {
     tenantId,
     createdAt: { gte: period.from, lte: period.to },
@@ -207,7 +185,7 @@ ownerRouter.get('/activity', async (req, res) => {
     ...(guestId ? { guestProfileId: guestId } : {}),
   };
 
-  const [txs, attempts, lookup, { flags: earnFlags }] = await Promise.all([
+  const [txs, attempts, lookup] = await Promise.all([
     type === 'REJECTED'
       ? []
       : prisma.pointTransaction.findMany({
@@ -225,15 +203,7 @@ ownerRouter.get('/activity', async (req, res) => {
           include: { reward: { select: { name: true } }, receipt: { select: { number: true, totalCents: true } } },
         }),
     names(tenantId),
-    suspiciousEarnFlags(tenantId, settings, period.from, period.to),
   ]);
-
-  // Rejected-attempt bursts are judged on all attempts in the period, not just the filtered ones.
-  const allAttempts = await prisma.scanAttempt.findMany({
-    where: { tenantId, createdAt: { gte: period.from, lte: period.to } },
-    select: { id: true, waiterId: true, guestProfileId: true, createdAt: true },
-  });
-  const attemptFlags = detectSuspiciousAttempts(allAttempts);
 
   const items = [
     ...txs.map((t) => ({
@@ -249,7 +219,6 @@ ownerRouter.get('/activity', async (req, res) => {
       reward: t.reward?.name ?? null,
       costCents: t.costCents,
       ruleSnapshot: t.ruleSnapshot,
-      flags: earnFlags.get(t.id) ?? [],
     })),
     ...attempts.map((a) => ({
       id: a.id,
@@ -265,33 +234,13 @@ ownerRouter.get('/activity', async (req, res) => {
       location: lookup.location.get(a.locationId),
       receipt: a.receipt,
       reward: a.reward?.name ?? null,
-      flags: attemptFlags.get(a.id) ?? [],
     })),
-  ]
-    .filter((item) => !onlyFlagged || item.flags.length > 0)
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-  // Suspicious waiter → guest pairs in the period (summary above the log).
-  const pairs = new Map();
-  for (const item of items) {
-    if (!item.flags.length || !item.waiter || !item.guest) continue;
-    const key = `${item.waiter.id}|${item.guest.id}`;
-    const pair = pairs.get(key) ?? { waiter: item.waiter, guest: item.guest, earns: 0, rejected: 0, flags: new Set() };
-    if (item.kind === 'ATTEMPT') pair.rejected += 1;
-    else pair.earns += 1;
-    item.flags.forEach((f) => pair.flags.add(f));
-    pairs.set(key, pair);
-  }
+  ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
   res.json({
     period: { from: period.fromDay, to: period.toDay },
     total: items.length,
     truncated: txs.length === cap || attempts.length === cap,
     items: items.slice(offset, offset + limit),
-    suspicious: [...pairs.values()]
-      .map((p) => ({ ...p, flags: [...p.flags] }))
-      .sort((a, b) => b.earns + b.rejected - (a.earns + a.rejected)),
-    flagLabels: FLAG_LABELS,
-    thresholds: { ...FRAUD_THRESHOLDS, dailyScanLimitPerGuest: settings.dailyScanLimitPerGuest },
   });
 });

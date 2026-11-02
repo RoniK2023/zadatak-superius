@@ -98,7 +98,6 @@ async function seedAll(tx, now) {
       happyHourStart: '17:00',
       happyHourEnd: '19:00',
       happyHourDays: [1, 2, 3, 4, 5],
-      dailyScanLimitPerGuest: 3,
     },
   });
   const rule = buildEarningRule(settings);
@@ -128,7 +127,6 @@ async function seedAll(tx, now) {
       }),
     );
   }
-  const espresso = products[0];
 
   const rewards = [];
   for (const [name, pointsCost, costPriceCents] of [
@@ -258,31 +256,16 @@ async function seedAll(tx, now) {
     earn(expired, receipt, waiterCentar, new Date(paidAt.getTime() + 60_000));
   }
 
-  // ---- Suspicious pattern: Ana (Centar) keeps awarding Luka Perić ------------------------
-  const luka = guests.find((g) => g.name === 'Luka Perić');
-  const burstDay = zNow.minus({ days: 9 });
-  for (const [h, m] of [[9, 5], [10, 40], [12, 15], [14, 20], [15, 55]]) {
-    const paidAt = burstDay.set({ hour: h, minute: m, second: 0, millisecond: 0 }).toJSDate();
-    const receipt = makeReceipt(centar, paidAt, [[espresso, 2], [products[10], 1]]);
-    earn(luka, receipt, waiterCentar, new Date(paidAt.getTime() + 60_000));
-  }
-  for (let d = 25; d >= 11; d -= 2) {
-    const day = zNow.minus({ days: d });
-    if (day.weekday > 5) continue;
-    const paidAt = day.set({ hour: 11, minute: between(0, 50), second: 0, millisecond: 0 }).toJSDate();
-    const receipt = makeReceipt(centar, paidAt, [[espresso, 2], [products[10], 1]]);
-    earn(luka, receipt, waiterCentar, new Date(paidAt.getTime() + 60_000));
-  }
-  // Repeated rejected attempts: the same already-awarded receipt scanned again three times.
-  const lukaLastEarn = transactions.filter((t) => t.guestProfileId === luka.profile.id && t.type === 'EARN').at(-1);
-  for (const minutes of [3, 6, 11]) {
-    attempts.push({
-      id: randomUUID(), tenantId: tenant.id, action: 'EARN', reason: 'RECEIPT_ALREADY_AWARDED',
-      waiterId: waiterCentar.id, guestProfileId: luka.profile.id, receiptId: lukaLastEarn.receiptId,
-      locationId: centar.id, createdAt: new Date(lukaLastEarn.createdAt.getTime() + minutes * 60_000),
-    });
-  }
-  // A few other rejections for realism.
+  // ---- A few rejected attempts (shown in the owner's activity log) ----------------------
+  // A receipt that was already awarded, scanned a second time.
+  const lastEarn = transactions
+    .filter((t) => t.type === 'EARN' && t.locationId === centar.id)
+    .reduce((latest, t) => (t.createdAt > latest.createdAt ? t : latest));
+  attempts.push({
+    id: randomUUID(), tenantId: tenant.id, action: 'EARN', reason: 'RECEIPT_ALREADY_AWARDED',
+    waiterId: waiterCentar.id, guestProfileId: lastEarn.guestProfileId, receiptId: lastEarn.receiptId,
+    locationId: centar.id, createdAt: new Date(lastEarn.createdAt.getTime() + 4 * 60_000),
+  });
   for (const [g, days, reason, location] of [
     [guests[3], 20, 'INSUFFICIENT_POINTS', verudela],
     [guests[8], 6, 'INSUFFICIENT_POINTS', centar],

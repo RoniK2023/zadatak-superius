@@ -134,8 +134,6 @@ model ProgramSettings {
   // ISO weekdays: 1 = Monday … 7 = Sunday
   happyHourDays    Int[]   @default([1, 2, 3, 4, 5])
 
-  dailyScanLimitPerGuest Int @default(3)
-
   updatedAt DateTime @updatedAt
 
   tenant Tenant @relation(fields: [tenantId], references: [id])
@@ -240,7 +238,7 @@ model PointTransaction {
   @@index([guestProfileId, createdAt])
 }
 
-// Rejected earn/redeem attempts — fraud signal shown in the owner's activity log.
+// Rejected earn/redeem attempts — shown in the owner's activity log.
 model ScanAttempt {
   id             String        @id @default(cuid())
   tenantId       String
