@@ -1,0 +1,264 @@
+// Mandrač Loyalty — data model.
+// Money is stored in integer cents (…Cents) to avoid floating point errors.
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPERADMIN
+  OWNER
+  WAITER
+  GUEST
+}
+
+enum EarningMode {
+  AMOUNT
+  ITEM
+}
+
+enum ExpiryMode {
+  FIXED_DATE
+  PERIOD
+  INACTIVITY
+}
+
+enum TransactionType {
+  EARN
+  REDEEM
+  EXPIRE
+}
+
+enum AttemptAction {
+  EARN
+  REDEEM
+}
+
+model Tenant {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+
+  locations     Location[]
+  users         User[]
+  settings      ProgramSettings?
+  products      Product[]
+  rewards       Reward[]
+  receipts      Receipt[]
+  transactions  PointTransaction[]
+  attempts      ScanAttempt[]
+  guestProfiles GuestProfile[]
+}
+
+model Location {
+  id             String   @id @default(cuid())
+  tenantId       String
+  name           String
+  address        String?
+  programEnabled Boolean  @default(true)
+  createdAt      DateTime @default(now())
+
+  tenant       Tenant             @relation(fields: [tenantId], references: [id])
+  users        User[]
+  receipts     Receipt[]
+  transactions PointTransaction[]
+  attempts     ScanAttempt[]
+
+  @@unique([tenantId, name])
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         Role
+  tenantId     String?
+  locationId   String?
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  tenant       Tenant?            @relation(fields: [tenantId], references: [id])
+  location     Location?          @relation(fields: [locationId], references: [id])
+  guestProfile GuestProfile?
+  receipts     Receipt[]
+  transactions PointTransaction[]
+  attempts     ScanAttempt[]
+
+  @@index([tenantId, role])
+}
+
+model GuestProfile {
+  id             String    @id @default(cuid())
+  userId         String    @unique
+  tenantId       String
+  qrToken        String    @unique
+  balance        Int       @default(0)
+  lastActivityAt DateTime?
+  lastResetAt    DateTime?
+  createdAt      DateTime  @default(now())
+
+  user         User               @relation(fields: [userId], references: [id])
+  tenant       Tenant             @relation(fields: [tenantId], references: [id])
+  transactions PointTransaction[]
+  attempts     ScanAttempt[]
+
+  @@index([tenantId])
+}
+
+model ProgramSettings {
+  id       String @id @default(cuid())
+  tenantId String @unique
+
+  earningMode   EarningMode @default(AMOUNT)
+  pointsPerEuro Decimal     @default(1) @db.Decimal(8, 2)
+
+  expiryMode              ExpiryMode @default(INACTIVITY)
+  expiryDay               Int?
+  expiryMonth             Int?
+  expiryPeriodMonths      Int?
+  expiryInactivityMonths  Int?       @default(12)
+  programStartAt          DateTime   @default(now())
+  expirySettingsChangedAt DateTime   @default(now())
+
+  happyHourEnabled Boolean @default(false)
+  happyHourStart   String  @default("17:00")
+  happyHourEnd     String  @default("19:00")
+  // ISO weekdays: 1 = Monday … 7 = Sunday
+  happyHourDays    Int[]   @default([1, 2, 3, 4, 5])
+
+  dailyScanLimitPerGuest Int @default(3)
+
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+}
+
+model Product {
+  id            String   @id @default(cuid())
+  tenantId      String
+  name          String
+  category      String
+  priceCents    Int
+  pointsPerItem Int      @default(0)
+  active        Boolean  @default(true)
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id])
+  receiptItems ReceiptItem[]
+
+  @@index([tenantId])
+}
+
+model Reward {
+  id             String   @id @default(cuid())
+  tenantId       String
+  name           String
+  pointsCost     Int
+  costPriceCents Int
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now())
+
+  tenant       Tenant             @relation(fields: [tenantId], references: [id])
+  transactions PointTransaction[]
+  attempts     ScanAttempt[]
+
+  @@index([tenantId])
+}
+
+// Simulated POS receipt. In production this comes from the fiscalised Superius POS.
+model Receipt {
+  id          String   @id @default(cuid())
+  tenantId    String
+  number      Int
+  locationId  String
+  waiterId    String
+  totalCents  Int
+  paidAt      DateTime
+  isHappyHour Boolean  @default(false)
+  // Earning rule active when the receipt was issued: { earningMode, pointsPerEuro }
+  earningRule Json
+  createdAt   DateTime @default(now())
+
+  tenant          Tenant            @relation(fields: [tenantId], references: [id])
+  location        Location          @relation(fields: [locationId], references: [id])
+  waiter          User              @relation(fields: [waiterId], references: [id])
+  items           ReceiptItem[]
+  earnTransaction PointTransaction?
+  attempts        ScanAttempt[]
+
+  @@unique([tenantId, number])
+  @@index([locationId, paidAt])
+}
+
+model ReceiptItem {
+  id             String @id @default(cuid())
+  receiptId      String
+  productId      String
+  name           String
+  quantity       Int
+  unitPriceCents Int
+  pointsPerItem  Int    @default(0)
+
+  receipt Receipt @relation(fields: [receiptId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+}
+
+// One row per event (not per point). Also the activity log and analytics source.
+model PointTransaction {
+  id             String          @id @default(cuid())
+  tenantId       String
+  type           TransactionType
+  guestProfileId String
+  points         Int
+  // Unique: a receipt can earn points only once (only EARN rows carry a receiptId).
+  receiptId      String?         @unique
+  rewardId       String?
+  waiterId       String?
+  locationId     String?
+  ruleSnapshot   Json?
+  // Reward purchase cost at the moment of redemption (REDEEM only).
+  costCents      Int?
+  createdAt      DateTime        @default(now())
+
+  tenant   Tenant       @relation(fields: [tenantId], references: [id])
+  guest    GuestProfile @relation(fields: [guestProfileId], references: [id])
+  receipt  Receipt?     @relation(fields: [receiptId], references: [id])
+  reward   Reward?      @relation(fields: [rewardId], references: [id])
+  waiter   User?        @relation(fields: [waiterId], references: [id])
+  location Location?    @relation(fields: [locationId], references: [id])
+
+  @@index([tenantId, createdAt])
+  @@index([guestProfileId, createdAt])
+}
+
+// Rejected earn/redeem attempts — fraud signal shown in the owner's activity log.
+model ScanAttempt {
+  id             String        @id @default(cuid())
+  tenantId       String
+  action         AttemptAction
+  reason         String
+  waiterId       String
+  guestProfileId String?
+  receiptId      String?
+  rewardId       String?
+  locationId     String
+  createdAt      DateTime      @default(now())
+
+  tenant   Tenant        @relation(fields: [tenantId], references: [id])
+  waiter   User          @relation(fields: [waiterId], references: [id])
+  guest    GuestProfile? @relation(fields: [guestProfileId], references: [id])
+  receipt  Receipt?      @relation(fields: [receiptId], references: [id])
+  reward   Reward?       @relation(fields: [rewardId], references: [id])
+  location Location      @relation(fields: [locationId], references: [id])
+
+  @@index([tenantId, createdAt])
+}
