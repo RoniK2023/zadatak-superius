@@ -24,7 +24,8 @@ export default function Register() {
     document.title = 'Registracija · Mandrač Loyalty';
   }, []);
 
-  if (status === 'authenticated' && user) return <Navigate to={HOME_BY_ROLE[user.role]} replace />;
+  // While submitting, the success handler navigates (with the welcome state) itself.
+  if (status === 'authenticated' && user && !submitting) return <Navigate to={HOME_BY_ROLE[user.role]} replace />;
 
   const validate = () => {
     const next = {};
