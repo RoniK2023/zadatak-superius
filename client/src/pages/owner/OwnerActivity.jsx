@@ -71,32 +71,41 @@ export default function OwnerActivity() {
       mobile: 'title',
       render: (i) => (
         <span className="flex flex-wrap items-center gap-2">
-          <Badge tone={TYPE_META[i.type].tone}>{TYPE_META[i.type].label}</Badge>
-          <span className="text-sm font-medium text-ink md:hidden">{i.guest?.name ?? 'Nepoznat gost'}</span>
+          <Badge tone={TYPE_META[i.type].tone} className="w-20 justify-center">
+            {TYPE_META[i.type].label}
+          </Badge>
+          <span className="text-sm font-semibold text-ink md:hidden">{i.guest?.name ?? 'Nepoznat gost'}</span>
         </span>
       ),
     },
-    { key: 'guest', header: 'Gost', mobile: 'hide', className: 'whitespace-nowrap font-medium text-ink', render: (i) => i.guest?.name ?? 'Nepoznat kod' },
-    { key: 'waiter', header: 'Konobar', className: 'whitespace-nowrap', render: (i) => i.waiter?.name ?? '—' },
-    { key: 'location', header: 'Lokacija', render: (i) => i.location ?? '—' },
+    { key: 'guest', header: 'Gost', mobile: 'hide', className: 'whitespace-nowrap font-semibold text-ink', render: (i) => i.guest?.name ?? 'Nepoznat kod' },
+    {
+      key: 'waiter',
+      header: 'Konobar · lokacija',
+      className: 'whitespace-nowrap',
+      render: (i) => (
+        <span className="block leading-tight">
+          <span className="block text-ink">{i.waiter?.name ?? '—'}</span>
+          <span className="block text-xs text-ink-muted">{i.location ?? '—'}</span>
+        </span>
+      ),
+    },
     {
       key: 'detail',
       header: 'Detalji',
-      className: 'max-w-xs',
+      className: 'w-full max-w-0',
       render: (i) => (
         <span className="block">
-          <span className={cx('block truncate', i.type === 'REJECTED' && 'text-danger')} title={describeActivity(i)}>
-            {describeActivity(i)}
-          </span>
-          {i.flags.length > 0 && (
-            <span className="mt-1 flex flex-wrap gap-1">
-              {i.flags.map((f) => (
-                <Badge key={f} tone="danger" icon={ShieldAlert} className="whitespace-normal">
-                  {labels[f] ?? f}
-                </Badge>
-              ))}
+          <span className="flex items-center gap-2">
+            <span className={cx('truncate', i.type === 'REJECTED' ? 'text-danger' : 'text-ink')} title={describeActivity(i)}>
+              {describeActivity(i)}
             </span>
-          )}
+            {i.flags.length > 0 && (
+              <Badge tone="warning" icon={ShieldAlert} title={i.flags.map((f) => labels[f] ?? f).join(' · ')}>
+                Sumnjivo
+              </Badge>
+            )}
+          </span>
         </span>
       ),
     },
@@ -141,7 +150,7 @@ export default function OwnerActivity() {
           <option value="EXPIRE">Istek</option>
           <option value="REJECTED">Odbijeni pokušaji</option>
         </Select>
-        <div className="lg:pb-2.5">
+        <div className="lg:ml-auto lg:pb-2">
           <Switch
             label="Samo sumnjivo"
             checked={flagged}
@@ -151,15 +160,17 @@ export default function OwnerActivity() {
       </PeriodFilter>
 
       {data?.suspicious?.length > 0 && (
-        <Card className="mb-6 border-danger-soft">
+        <Card className="mb-6">
           <CardHeader
             title="Sumnjive aktivnosti"
             description={`Pragovi: gost bodovan više od ${data.thresholds.dailyScanLimitPerGuest}× dnevno · isti konobar istom gostu više od ${data.thresholds.waiterGuestPerDay}× dnevno · ${data.thresholds.rejectedPerDay}+ odbijena pokušaja dnevno.`}
           />
-          <ul className="divide-y divide-line">
+          <ul className="divide-y divide-line border-t border-line">
             {data.suspicious.map((p) => (
               <li key={`${p.waiter.id}-${p.guest.id}`} className="flex flex-wrap items-center gap-3 px-4 py-3 sm:px-5">
-                <ShieldAlert className="h-5 w-5 shrink-0 text-danger" aria-hidden />
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-warning-soft text-warning ring-1 ring-inset ring-warning-line">
+                  <ShieldAlert className="h-4 w-4" aria-hidden />
+                </span>
                 <p className="min-w-0 flex-1 text-sm text-ink">
                   <span className="font-semibold">{p.waiter.name}</span> → <span className="font-semibold">{p.guest.name}</span>
                   <span className="text-ink-muted">
@@ -169,6 +180,7 @@ export default function OwnerActivity() {
                 </p>
                 <Button
                   variant="secondary"
+                  size="sm"
                   onClick={() => setExtra((x) => ({ ...x, waiterId: p.waiter.id, guestId: p.guest.id, type: '' }))}
                 >
                   Prikaži
@@ -213,7 +225,6 @@ export default function OwnerActivity() {
               columns={columns}
               rows={data.items}
               rowKey={(i) => `${i.kind}-${i.id}`}
-              rowClassName={(i) => (i.flags.length ? 'bg-danger-soft/40' : undefined)}
               mobileAside={(i) => (
                 <span className="block">
                   <PointsCell item={i} />
@@ -238,8 +249,8 @@ export default function OwnerActivity() {
 function PointsCell({ item }) {
   if (item.type === 'REJECTED') return <span className="text-sm text-ink-muted">—</span>;
   return (
-    <span className={cx('text-sm font-semibold tabular', item.points > 0 ? 'text-success' : 'text-ink')}>
-      {item.points > 0 ? `+${item.points}` : item.points}
+    <span className={cx('text-sm font-semibold', item.points > 0 ? 'text-success' : 'text-ink-muted')}>
+      {item.points > 0 ? `+${item.points}` : `−${Math.abs(item.points)}`}
     </span>
   );
 }

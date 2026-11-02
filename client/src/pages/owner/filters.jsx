@@ -53,66 +53,108 @@ export function useFilterOptions() {
   return useApi('/owner/filters');
 }
 
-export function PeriodFilter({ filters, update, locations, children, activeExtra = 0 }) {
-  const [open, setOpen] = useState(false);
+function DateRange({ filters, update, compact = false }) {
   const invalid = filters.from && filters.to && filters.to < filters.from;
-  const periodLabel = PRESETS.find((p) => p.value === filters.preset && p.value !== 'custom')?.label
-    ?? `${formatDay(filters.from)} – ${formatDay(filters.to)}`;
+  return (
+    <div className={cx('grid grid-cols-2 gap-3', compact && 'lg:flex lg:gap-2')}>
+      <Input
+        label="Od"
+        type="date"
+        value={filters.from}
+        max={filters.to}
+        onChange={(e) => update({ from: e.target.value })}
+        inputClassName={compact ? 'lg:h-9' : undefined}
+      />
+      <Input
+        label="Do"
+        type="date"
+        value={filters.to}
+        min={filters.from}
+        max={zagrebToday()}
+        onChange={(e) => update({ to: e.target.value })}
+        error={invalid ? 'Mora biti nakon datuma "od".' : undefined}
+        inputClassName={compact ? 'lg:h-9' : undefined}
+      />
+    </div>
+  );
+}
+
+function LocationSelect({ filters, update, locations, className, size, hideLabel }) {
+  return (
+    <Select label="Lokacija" className={className} size={size} hideLabel={hideLabel} value={filters.locationId} onChange={(e) => update({ locationId: e.target.value })}>
+      <option value="">Sve lokacije</option>
+      {(locations ?? []).map((l) => (
+        <option key={l.id} value={l.id}>
+          {l.name}
+          {l.programEnabled ? '' : ' (izvan programa)'}
+        </option>
+      ))}
+    </Select>
+  );
+}
+
+/**
+ * Period + location filters.
+ *  - `inline` (default for dashboards): compact controls meant for the page header's right side on desktop.
+ *  - otherwise: a toolbar card that also hosts extra filters (children).
+ * On mobile both collapse into one summary row so data stays above the fold.
+ */
+export function PeriodFilter({ filters, update, locations, children, activeExtra = 0, inline = false }) {
+  const [open, setOpen] = useState(false);
+  const periodLabel =
+    PRESETS.find((p) => p.value === filters.preset && p.value !== 'custom')?.label ?? `${formatDay(filters.from)} – ${formatDay(filters.to)}`;
   const locationLabel = locations?.find((l) => l.id === filters.locationId)?.name ?? 'Sve lokacije';
 
-  return (
-    <div className="mb-6 rounded-lg border border-line bg-surface shadow-sm">
-      {/* Mobile: collapsed summary keeps the data above the fold */}
+  const mobile = (
+    <div className={cx('rounded-lg border border-line bg-surface shadow-card lg:hidden', inline ? 'w-full' : 'mb-6')}>
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="flex min-h-12 w-full items-center gap-3 px-4 py-3 text-left lg:hidden"
+        className="flex min-h-12 w-full items-center gap-3 px-4 py-3 text-left"
       >
         <ListFilter className="h-5 w-5 shrink-0 text-ink-muted" aria-hidden />
         <span className="min-w-0 flex-1 truncate text-sm text-ink">
-          <span className="font-medium">{periodLabel}</span> · {locationLabel}
-          {activeExtra > 0 && <span className="text-accent"> · +{activeExtra} filtra</span>}
+          <span className="font-semibold">{periodLabel}</span> · {locationLabel}
+          {activeExtra > 0 && <span className="font-semibold text-accent"> · +{activeExtra} filtra</span>}
         </span>
         <ChevronDown className={cx('h-5 w-5 text-ink-muted transition-transform', open && 'rotate-180')} aria-hidden />
       </button>
-      <div
-        className={cx(
-          'flex-col gap-4 border-t border-line p-4 lg:flex lg:flex-row lg:flex-wrap lg:items-end lg:border-t-0',
-          open ? 'flex' : 'hidden',
-        )}
-      >
-        <Segmented label="Razdoblje" value={filters.preset} onChange={(preset) => update({ preset })} options={PRESETS} />
-        {filters.preset === 'custom' && (
-          <div className="grid grid-cols-2 gap-3 lg:flex">
-            <Input label="Od" type="date" value={filters.from} max={filters.to} onChange={(e) => update({ from: e.target.value })} />
-            <Input
-              label="Do"
-              type="date"
-              value={filters.to}
-              min={filters.from}
-              max={zagrebToday()}
-              onChange={(e) => update({ to: e.target.value })}
-              error={invalid ? 'Mora biti nakon datuma "od".' : undefined}
-            />
+      {open && (
+        <div className="flex flex-col gap-4 border-t border-line p-4">
+          <Segmented label="Razdoblje" value={filters.preset} onChange={(preset) => update({ preset })} options={PRESETS} />
+          {filters.preset === 'custom' && <DateRange filters={filters} update={update} />}
+          <LocationSelect filters={filters} update={update} locations={locations} />
+          {children}
+        </div>
+      )}
+    </div>
+  );
+
+  if (inline) {
+    return (
+      <>
+        {mobile}
+        <div className="hidden items-end gap-2 lg:flex">
+          {filters.preset === 'custom' && <DateRange filters={filters} update={update} compact />}
+          <Segmented label="Razdoblje" hideLabel size="sm" value={filters.preset} onChange={(preset) => update({ preset })} options={PRESETS} />
+          <div className="w-44">
+            <LocationSelect filters={filters} update={update} locations={locations} size="sm" hideLabel />
           </div>
-        )}
-        <Select
-          label="Lokacija"
-          className="lg:w-48"
-          value={filters.locationId}
-          onChange={(e) => update({ locationId: e.target.value })}
-        >
-          <option value="">Sve lokacije</option>
-          {(locations ?? []).map((l) => (
-            <option key={l.id} value={l.id}>
-              {l.name}
-              {l.programEnabled ? '' : ' (izvan programa)'}
-            </option>
-          ))}
-        </Select>
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <>
+      {mobile}
+      <div className="mb-6 hidden flex-wrap items-end gap-4 rounded-lg border border-line bg-surface p-4 shadow-card lg:flex">
+        <Segmented label="Razdoblje" value={filters.preset} onChange={(preset) => update({ preset })} options={PRESETS} />
+        {filters.preset === 'custom' && <DateRange filters={filters} update={update} compact />}
+        <LocationSelect filters={filters} update={update} locations={locations} className="w-44" />
         {children}
       </div>
-    </div>
+    </>
   );
 }

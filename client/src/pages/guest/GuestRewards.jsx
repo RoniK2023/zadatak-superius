@@ -1,10 +1,9 @@
-import { CheckCircle2, Gift } from 'lucide-react';
+import { Gift } from 'lucide-react';
 import { PageHeader } from '../../components/layout/PageHeader.jsx';
-import { Badge } from '../../components/ui/Badge.jsx';
 import { Card, CardHeader } from '../../components/ui/Card.jsx';
-import { EmptyState, ErrorState, SkeletonList } from '../../components/ui/States.jsx';
-import { formatPoints } from '../../lib/format.js';
-import { ProgressBar } from './GuestCard.jsx';
+import { EmptyState, ErrorState, Skeleton } from '../../components/ui/States.jsx';
+import { formatNumber, formatPoints, pointsLabel } from '../../lib/format.js';
+import { RewardRow } from './GuestCard.jsx';
 import { useGuest } from './useGuest.js';
 
 export default function GuestRewards() {
@@ -17,38 +16,48 @@ export default function GuestRewards() {
 
   return (
     <>
-      <PageHeader title="Nagrade" description={data ? `Imate ${formatPoints(data.balance)}. ${earning}` : ' '} />
+      <PageHeader title="Nagrade" description="Nagradu iskorištavate kod konobara uz svoj QR kod." />
+
+      <Card className="mb-6 flex items-center justify-between gap-4 p-4 sm:p-5">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-ink-muted">Vaše stanje</p>
+          {loading ? (
+            <Skeleton className="mt-2 h-8 w-24" />
+          ) : (
+            <p className="mt-1 flex items-baseline gap-1.5">
+              <span className="text-2xl font-bold text-ink">{formatNumber(data?.balance ?? 0)}</span>
+              <span className="text-base font-medium text-ink-muted">{pointsLabel(data?.balance ?? 0)}</span>
+            </p>
+          )}
+        </div>
+        {data && <p className="max-w-xs text-right text-sm text-ink-muted">{earning}</p>}
+      </Card>
+
       <Card>
-        <CardHeader title="Katalog nagrada" description="Nagradu iskorištavate kod konobara uz svoj QR kod." />
+        <CardHeader title="Katalog nagrada" />
         {loading ? (
-          <SkeletonList rows={3} />
+          <div className="space-y-6 border-t border-line p-5">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="space-y-2">
+                <Skeleton className="h-4 w-1/2" />
+                <Skeleton className="h-2 w-full rounded-full" />
+              </div>
+            ))}
+          </div>
         ) : error ? (
           <ErrorState error={error} onRetry={reload} />
         ) : data.rewards.length === 0 ? (
           <EmptyState icon={Gift} title="Nema aktivnih nagrada" description="Nagrade će se pojaviti čim ih vlasnik doda." />
         ) : (
-          <ul className="divide-y divide-line">
+          <ul className="divide-y divide-line border-t border-line">
             {data.rewards.map((r) => (
-              <li key={r.id} className="px-4 py-4 sm:px-5">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-subtle text-ink-muted">
-                    <Gift className="h-5 w-5" strokeWidth={1.75} aria-hidden />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium text-ink">{r.name}</p>
-                    <p className="text-sm text-ink-muted">{formatPoints(r.pointsCost)}</p>
-                  </div>
-                  {r.missing === 0 ? (
-                    <Badge tone="success" icon={CheckCircle2}>
-                      Dostupno
-                    </Badge>
-                  ) : (
-                    <span className="text-right text-sm text-ink-muted">
-                      Nedostaje <span className="block font-semibold tabular text-ink">{formatPoints(r.missing)}</span>
-                    </span>
-                  )}
+              <li key={r.id} className="flex gap-4 px-4 py-4 sm:px-5">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-accent-soft text-accent">
+                  <Gift className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <RewardRow reward={r} />
                 </div>
-                <ProgressBar value={r.progress} label={`Napredak do nagrade ${r.name}`} />
               </li>
             ))}
           </ul>

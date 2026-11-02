@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2, ReceiptText, RotateCw, XCircle } from 'lucide-react';
+import { ArrowRight, ReceiptText, RotateCw } from 'lucide-react';
 import { PageHeader } from '../../components/layout/PageHeader.jsx';
 import { QrScanner } from '../../components/QrScanner.jsx';
+import { ResultPanel, ResultStats } from '../../components/ResultPanel.jsx';
 import { WaiterStatus } from '../../components/WaiterStatus.jsx';
 import { Badge } from '../../components/ui/Badge.jsx';
 import { Button, ButtonLink } from '../../components/ui/Button.jsx';
@@ -43,13 +44,10 @@ export default function WaiterAward() {
       try {
         const data = await api('/waiter/award', { method: 'POST', body: { receiptId: selected.id, qrToken } });
         setResult({ ok: true, ...data });
-        if (data.points > 0) toast.success(`+${formatPoints(data.points)} za ${data.guest.name}`, `Novo stanje: ${formatPoints(data.guest.balance)}`);
-        else toast.info(`${data.guest.name}: račun ne nosi bodove`, 'Posjet je zabilježen.');
         if (data.expiredPoints > 0) toast.warning('Stari bodovi su istekli', `${formatPoints(data.expiredPoints)} je resetirano prije dodjele.`);
         receipts.reload({ silent: true });
       } catch (err) {
-        setResult({ ok: false, code: err.code, message: err.message, guestName: err.fields?.guestName });
-        toast.error('Bodovi nisu dodijeljeni', err.message);
+        setResult({ ok: false, code: err.code, message: err.message, receipt: selected });
         receipts.reload({ silent: true });
       } finally {
         setBusy(false);
@@ -65,17 +63,15 @@ export default function WaiterAward() {
 
   return (
     <>
-      <PageHeader title="Dodjela bodova" description="Odaberite današnji račun i skenirajte QR kod gosta. Bodovi se računaju automatski." />
-      <div className="mb-5">
-        <WaiterStatus context={context.data} mode="earn" />
-      </div>
+      <PageHeader title="Dodaj bodove" description="Odaberite današnji račun i skenirajte QR kod gosta. Bodovi se računaju automatski iz računa." />
+      <WaiterStatus context={context.data} mode="earn" />
 
       {result ? (
-        <AwardResult result={result} receipt={selected} onNext={reset} onRetry={() => setResult(null)} />
+        <AwardResult result={result} onNext={reset} onRetry={() => setResult(null)} />
       ) : (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start">
           <Card>
-            <CardHeader title="1. Račun" description="Današnji računi bez dodijeljenih bodova." />
+            <CardHeader title={<StepTitle n={1}>Račun</StepTitle>} description="Današnji računi bez dodijeljenih bodova." />
             {receipts.loading ? (
               <SkeletonList rows={3} />
             ) : receipts.error ? (
@@ -85,10 +81,10 @@ export default function WaiterAward() {
                 icon={ReceiptText}
                 title="Nema otvorenih računa"
                 description="Svi današnji računi su bodovani. Izdajte novi račun na blagajni."
-                action={<ButtonLink to="/konobar">Na blagajnu</ButtonLink>}
+                action={<ButtonLink to="/konobar/blagajna">Na blagajnu</ButtonLink>}
               />
             ) : (
-              <ul className="space-y-2 p-3 sm:p-4" role="radiogroup" aria-label="Računi">
+              <ul className="space-y-2 px-4 pb-4 sm:px-5 sm:pb-5" role="radiogroup" aria-label="Računi">
                 {receipts.data.map((r) => {
                   const active = r.id === selectedId;
                   return (
@@ -100,7 +96,7 @@ export default function WaiterAward() {
                         onClick={() => choose(active ? null : r.id)}
                         className={cx(
                           'flex min-h-16 w-full items-center gap-4 rounded-md border px-4 py-3 text-left transition-colors',
-                          active ? 'border-accent bg-accent-soft' : 'border-line hover:border-line-strong hover:bg-canvas',
+                          active ? 'border-accent bg-accent-soft ring-1 ring-accent' : 'border-line hover:border-line-strong hover:bg-canvas',
                         )}
                       >
                         <span
@@ -113,19 +109,19 @@ export default function WaiterAward() {
                           {active && <span className="h-2.5 w-2.5 rounded-full bg-accent" />}
                         </span>
                         <span className="min-w-0 flex-1">
-                          <span className="block text-base font-semibold text-ink">
-                            #{r.number} <span className="text-sm font-normal text-ink-muted">· {formatTime(r.paidAt)}</span>
+                          <span className="block text-base font-bold text-ink">
+                            #{r.number} <span className="text-sm font-medium text-ink-muted">· {formatTime(r.paidAt)}</span>
                           </span>
                           <span className="block truncate text-xs text-ink-muted">
                             {r.items.map((i) => `${i.quantity}× ${i.name}`).join(', ')}
                           </span>
                         </span>
                         <span className="text-right">
-                          <span className="block text-base font-semibold tabular text-ink">{formatMoney(r.totalCents)}</span>
+                          <span className="block text-base font-bold text-ink">{formatMoney(r.totalCents)}</span>
                           {r.isHappyHour ? (
                             <Badge tone="warning">Happy hour</Badge>
                           ) : (
-                            <span className="text-xs text-ink-muted">{formatPoints(r.estimatedPoints)}</span>
+                            <span className="text-xs font-medium text-ink-muted">{formatPoints(r.estimatedPoints)}</span>
                           )}
                         </span>
                       </button>
@@ -138,11 +134,11 @@ export default function WaiterAward() {
 
           <Card>
             <CardHeader
-              title="2. Gost"
+              title={<StepTitle n={2}>Gost</StepTitle>}
               description={selected ? `Račun #${selected.number} · ${formatMoney(selected.totalCents)}` : 'Najprije odaberite račun.'}
             />
-            <CardBody>
-              <QrScanner onCode={award} busy={busy} disabled={!selected} submitLabel="Dodijeli bodove" />
+            <CardBody className="pt-1 sm:pt-1">
+              <QrScanner onCode={award} busy={busy} disabled={!selected} submitLabel="Dodaj bodove" />
             </CardBody>
           </Card>
         </div>
@@ -151,60 +147,64 @@ export default function WaiterAward() {
   );
 }
 
-function AwardResult({ result, receipt, onNext, onRetry }) {
+function StepTitle({ n, children }) {
+  return (
+    <span className="flex items-center gap-2.5">
+      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-accent text-xs font-bold text-white">{n}</span>
+      {children}
+    </span>
+  );
+}
+
+function AwardResult({ result, onNext, onRetry }) {
   if (result.ok) {
+    const zero = result.points === 0;
     return (
-      <Card className="mx-auto max-w-xl">
-        <CardBody className="flex flex-col items-center py-10 text-center sm:py-12">
-          <CheckCircle2 className="h-12 w-12 text-success" strokeWidth={1.75} aria-hidden />
-          <p className="mt-4 text-sm font-medium text-ink-muted">{result.guest.name}</p>
-          <p className="mt-1 text-5xl font-semibold tabular text-ink">+{result.points}</p>
-          <p className="mt-1 text-base text-ink-muted">{result.points === 0 ? 'Račun ne nosi bodove' : `${pointsLabel(result.points)} dodijeljeno`}</p>
-          <dl className="mt-8 grid w-full grid-cols-2 gap-4 border-t border-line pt-6 text-left text-sm">
-            <div>
-              <dt className="text-ink-muted">Novo stanje</dt>
-              <dd className="mt-0.5 text-lg font-semibold tabular text-ink">{formatPoints(result.guest.balance)}</dd>
-            </div>
-            <div>
-              <dt className="text-ink-muted">Račun</dt>
-              <dd className="mt-0.5 text-lg font-semibold tabular text-ink">
-                #{result.receipt.number} · {formatMoney(result.receipt.totalCents)}
-              </dd>
-            </div>
-            {result.guest.expiresOn && (
-              <div className="col-span-2">
-                <dt className="text-ink-muted">Bodovi vrijede do</dt>
-                <dd className="mt-0.5 text-ink">{formatDay(result.guest.expiresOn)}</dd>
-              </div>
-            )}
-          </dl>
-          <Button size="lg" block className="mt-8" onClick={onNext}>
+      <ResultPanel
+        tone="success"
+        eyebrow={result.guest.name}
+        headline={`+${result.points}`}
+        headlineSuffix={pointsLabel(result.points)}
+        message={zero ? 'Račun ne nosi bodove — posjet je zabilježen.' : 'Bodovi su dodijeljeni.'}
+        actions={
+          <Button size="xl" block icon={ArrowRight} onClick={onNext}>
             Sljedeći račun
           </Button>
-        </CardBody>
-      </Card>
+        }
+      >
+        <ResultStats
+          items={[
+            { label: 'Novo stanje', value: formatPoints(result.guest.balance) },
+            { label: 'Račun', value: `#${result.receipt.number} · ${formatMoney(result.receipt.totalCents)}` },
+            result.guest.expiresOn && { label: 'Bodovi vrijede do', value: formatDay(result.guest.expiresOn), wide: true },
+          ]}
+        />
+      </ResultPanel>
     );
   }
 
   return (
-    <Card className="mx-auto max-w-xl">
-      <CardBody className="flex flex-col items-center py-10 text-center sm:py-12">
-        <XCircle className="h-12 w-12 text-danger" strokeWidth={1.75} aria-hidden />
-        <h2 className="mt-4 text-xl font-semibold text-ink">Bodovi nisu dodijeljeni</h2>
-        <p className="mt-2 max-w-sm text-base text-ink-muted">{result.message}</p>
-        {receipt && <p className="mt-1 text-sm text-ink-muted">Račun #{receipt.number}</p>}
-        <p className="mt-4 text-xs text-ink-faint">Pokušaj je zabilježen u logu aktivnosti.</p>
-        <div className="mt-8 flex w-full flex-col gap-2 sm:flex-row">
-          {result.code === 'GUEST_NOT_FOUND' && receipt && (
-            <Button variant="secondary" size="lg" icon={RotateCw} className="flex-1" onClick={onRetry}>
+    <ResultPanel
+      tone="danger"
+      headline="Bodovi nisu dodijeljeni"
+      message={result.message}
+      footnote="Pokušaj je zabilježen u logu aktivnosti."
+      actions={
+        <>
+          {result.code === 'GUEST_NOT_FOUND' && (
+            <Button variant="secondary" size="xl" icon={RotateCw} className="sm:flex-1" onClick={onRetry}>
               Skeniraj ponovno
             </Button>
           )}
-          <Button size="lg" icon={ArrowLeft} className="flex-1" onClick={onNext}>
+          <Button size="xl" className="sm:flex-1" onClick={onNext}>
             Natrag na račune
           </Button>
-        </div>
-      </CardBody>
-    </Card>
+        </>
+      }
+    >
+      {result.receipt && (
+        <ResultStats items={[{ label: 'Račun', value: `#${result.receipt.number} · ${formatMoney(result.receipt.totalCents)}`, wide: true }]} />
+      )}
+    </ResultPanel>
   );
 }

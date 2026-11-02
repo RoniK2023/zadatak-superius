@@ -62,12 +62,12 @@ export default function Login() {
 
   return (
     <PublicLayout>
-      <div className="mx-auto grid max-w-content gap-8 px-4 py-10 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:py-16">
-        <div className="mx-auto w-full max-w-md lg:mx-0">
-          <h1 className="text-2xl font-semibold text-ink sm:text-3xl">Prijava</h1>
-          <p className="mt-2 text-sm text-ink-muted">Ista prijava za goste, konobare i vlasnike — nakon prijave otvara se vaše sučelje.</p>
+      <div className="mx-auto w-full max-w-md px-4 py-10 sm:py-16">
+        <div className="rounded-xl border border-line bg-surface p-6 shadow-card sm:p-8">
+          <h1 className="text-xl font-semibold text-ink">Prijava</h1>
+          <p className="mt-1 text-sm text-ink-muted">Ista prijava za goste, konobare i vlasnike.</p>
 
-          <form onSubmit={onSubmit} noValidate className="mt-8 space-y-5">
+          <form onSubmit={onSubmit} noValidate className="mt-6 space-y-4">
             {submitError && <Notice tone="danger">{submitError}</Notice>}
             <Input
               label="Email"
@@ -87,25 +87,30 @@ export default function Login() {
               onChange={set('password')}
               error={errors.password}
             />
-            <Button type="submit" size="lg" block loading={submitting} icon={LogIn}>
-              Prijavi se
-            </Button>
+            <div className="pt-2">
+              <Button type="submit" size="lg" block loading={submitting} icon={LogIn}>
+                Prijavi se
+              </Button>
+            </div>
           </form>
-
-          <p className="mt-6 text-sm text-ink-muted">
-            Nemate račun?{' '}
-            <Link to={`/r/${DEFAULT_TENANT}`} className="font-medium text-accent underline-offset-4 hover:underline">
-              Registrirajte se kao gost
-            </Link>
-          </p>
         </div>
 
-        <aside className="self-start rounded-lg border border-line bg-surface p-5 shadow-sm sm:p-6">
-          <h2 className="text-base font-semibold text-ink">Demo računi</h2>
-          <p className="mt-1 text-sm text-ink-muted">
-            Lozinka za sve račune: <code className="rounded-sm bg-subtle px-1.5 py-0.5 font-mono text-ink">{DEMO_PASSWORD}</code>
-          </p>
-          <ul className="mt-4 divide-y divide-line">
+        <p className="mt-5 text-center text-sm text-ink-muted">
+          Nemate račun?{' '}
+          <Link to={`/r/${DEFAULT_TENANT}`} className="font-semibold text-accent underline-offset-4 hover:underline">
+            Registrirajte se kao gost
+          </Link>
+        </p>
+
+        {/* Discreet helper for reviewers — remove in production */}
+        <aside className="mt-10 rounded-lg border border-dashed border-line-strong px-4 py-3">
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-ink-muted">Demo računi</h2>
+            <p className="text-xs text-ink-muted">
+              lozinka <code className="font-mono font-semibold text-ink">{DEMO_PASSWORD}</code>
+            </p>
+          </div>
+          <ul className="-mx-2 mt-2">
             {DEMO_ACCOUNTS.map((a) => (
               <li key={a.email}>
                 <button
@@ -114,10 +119,10 @@ export default function Login() {
                     setForm({ email: a.email, password: DEMO_PASSWORD });
                     setErrors({});
                   }}
-                  className="flex min-h-11 w-full items-center justify-between gap-3 rounded-sm py-3 text-left text-sm hover:text-accent"
+                  className="flex min-h-11 w-full flex-col justify-center rounded-md px-2 py-1.5 text-left hover:bg-subtle sm:flex-row sm:items-center sm:justify-between sm:gap-3"
                 >
-                  <span className="font-medium text-ink">{a.label}</span>
-                  <span className="truncate text-ink-muted">{a.email}</span>
+                  <span className="text-sm font-medium text-ink">{a.label}</span>
+                  <span className="truncate text-xs text-ink-muted">{a.email}</span>
                 </button>
               </li>
             ))}

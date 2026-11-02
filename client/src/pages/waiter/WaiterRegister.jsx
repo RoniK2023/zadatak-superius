@@ -61,16 +61,15 @@ export default function WaiterRegister() {
     <>
       <PageHeader
         title="Blagajna"
-        description="Simulacija blagajne — u produkciji račun dolazi iz Superius POS-a. Cijene su iz cjenika i ne mogu se mijenjati."
+        description="Cijene dolaze iz cjenika i ne mogu se mijenjati. U produkciji račun dolazi iz Superius POS-a."
+        actions={<Badge tone="accent">Simulacija POS-a</Badge>}
       />
-      <div className="mb-5 space-y-3">
-        <WaiterStatus context={context.data} />
-      </div>
+      <WaiterStatus context={context.data} />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_22rem] lg:items-start">
         <Card>
           <CardHeader title="Cjenik" description="Dodirnite artikl za dodavanje na račun." />
-          <div className="no-scrollbar flex gap-2 overflow-x-auto border-b border-line px-4 py-3 sm:px-5" role="tablist" aria-label="Kategorije">
+          <div className="no-scrollbar flex gap-2 overflow-x-auto px-4 pb-4 sm:px-5" role="tablist" aria-label="Kategorije">
             {categories.map((c) => (
               <button
                 key={c}
@@ -79,8 +78,8 @@ export default function WaiterRegister() {
                 aria-selected={category === c}
                 onClick={() => setCategory(c)}
                 className={cx(
-                  'h-10 shrink-0 rounded-full border px-4 text-sm font-medium transition-colors',
-                  category === c ? 'border-ink bg-ink text-white' : 'border-line-strong bg-surface text-ink-muted hover:text-ink',
+                  'h-10 shrink-0 rounded-full px-4 text-sm font-semibold transition-colors sm:h-9',
+                  category === c ? 'bg-accent text-white' : 'bg-subtle text-ink-muted hover:text-ink',
                 )}
               >
                 {c}
@@ -88,9 +87,9 @@ export default function WaiterRegister() {
             ))}
           </div>
           {products.loading ? (
-            <div className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-3 sm:p-5">
+            <div className="grid grid-cols-2 gap-3 border-t border-line p-4 sm:grid-cols-3 sm:p-5">
               {Array.from({ length: 9 }, (_, i) => (
-                <Skeleton key={i} className="h-24" />
+                <Skeleton key={i} className="h-24 rounded-md" />
               ))}
             </div>
           ) : products.error ? (
@@ -98,42 +97,45 @@ export default function WaiterRegister() {
           ) : visible.length === 0 ? (
             <EmptyState icon={ShoppingBag} title="Cjenik je prazan" description="Vlasnik još nije dodao artikle u cjenik." />
           ) : (
-            <ul className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-3 sm:p-5">
-              {visible.map((p) => (
-                <li key={p.id}>
-                  <button
-                    type="button"
-                    onClick={() => change(p.id, 1)}
-                    className={cx(
-                      'relative flex h-full min-h-24 w-full flex-col justify-between rounded-md border p-3 text-left transition-colors',
-                      cart[p.id] ? 'border-accent bg-accent-soft' : 'border-line bg-surface hover:border-line-strong hover:bg-canvas',
-                    )}
-                  >
-                    <span className="pr-6 text-sm font-medium leading-snug text-ink">{p.name}</span>
-                    <span className="mt-2 text-sm tabular text-ink-muted">{formatMoney(p.priceCents)}</span>
-                    {cart[p.id] && (
-                      <span className="absolute right-2 top-2 flex h-6 min-w-6 items-center justify-center rounded-full bg-accent px-1.5 text-xs font-semibold text-white">
-                        {cart[p.id]}
-                      </span>
-                    )}
-                  </button>
-                </li>
-              ))}
+            <ul className="grid grid-cols-2 gap-3 border-t border-line p-4 sm:grid-cols-3 sm:p-5">
+              {visible.map((p) => {
+                const qty = cart[p.id];
+                return (
+                  <li key={p.id}>
+                    <button
+                      type="button"
+                      onClick={() => change(p.id, 1)}
+                      className={cx(
+                        'relative flex h-full min-h-24 w-full flex-col justify-between rounded-md border p-3.5 text-left transition-colors',
+                        qty ? 'border-accent bg-accent-soft' : 'border-line bg-surface hover:border-line-strong hover:bg-canvas',
+                      )}
+                    >
+                      <span className="pr-7 text-sm font-semibold leading-snug text-ink">{p.name}</span>
+                      <span className="mt-3 text-sm text-ink-muted">{formatMoney(p.priceCents)}</span>
+                      {qty && (
+                        <span className="absolute right-2.5 top-2.5 flex h-6 min-w-6 items-center justify-center rounded-full bg-accent px-1.5 text-xs font-bold text-white">
+                          {qty}
+                        </span>
+                      )}
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </Card>
 
         <Card className="lg:sticky lg:top-10">
-          <CardHeader title="Račun" description={itemCount ? `${itemCount} kom.` : 'Prazan'} />
+          <CardHeader title="Račun" description={itemCount ? `${itemCount} kom.` : 'Još nema artikala'} />
           {lines.length === 0 ? (
-            <EmptyState icon={ReceiptText} title="Nema artikala" description="Dodajte artikle iz cjenika." className="py-8" />
+            <div className="border-t border-line px-5 py-8 text-center text-sm text-ink-muted">Dodajte artikle iz cjenika.</div>
           ) : (
-            <ul className="divide-y divide-line">
+            <ul className="divide-y divide-line border-t border-line">
               {lines.map((l) => (
-                <li key={l.id} className="flex items-center gap-3 px-4 py-2 sm:px-5">
+                <li key={l.id} className="flex items-center gap-2 py-1.5 pl-4 pr-2 sm:pl-5">
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-ink">{l.name}</p>
-                    <p className="text-xs tabular text-ink-muted">
+                    <p className="truncate text-sm font-semibold text-ink">{l.name}</p>
+                    <p className="text-xs text-ink-muted">
                       {l.quantity} × {formatMoney(l.priceCents)}
                     </p>
                   </div>
@@ -141,7 +143,7 @@ export default function WaiterRegister() {
                     <Button variant="ghost" size="icon" aria-label={`Smanji ${l.name}`} onClick={() => change(l.id, -1)}>
                       {l.quantity === 1 ? <Trash2 className="h-4 w-4" aria-hidden /> : <Minus className="h-4 w-4" aria-hidden />}
                     </Button>
-                    <span className="w-6 text-center text-sm font-semibold tabular">{l.quantity}</span>
+                    <span className="w-6 text-center text-sm font-bold">{l.quantity}</span>
                     <Button variant="ghost" size="icon" aria-label={`Povećaj ${l.name}`} onClick={() => change(l.id, 1)}>
                       <Plus className="h-4 w-4" aria-hidden />
                     </Button>
@@ -150,12 +152,12 @@ export default function WaiterRegister() {
               ))}
             </ul>
           )}
-          <div className="hidden border-t border-line p-4 sm:p-5 lg:block">
+          <div className="hidden border-t border-line p-5 lg:block">
             <div className="mb-4 flex items-baseline justify-between">
-              <span className="text-sm text-ink-muted">Ukupno</span>
-              <span className="text-2xl font-semibold tabular text-ink">{formatMoney(totalCents)}</span>
+              <span className="text-sm font-medium text-ink-muted">Ukupno</span>
+              <span className="text-xl font-bold text-ink">{formatMoney(totalCents)}</span>
             </div>
-            <Button size="lg" block disabled={!lines.length} loading={issuing} onClick={issue} icon={ReceiptText}>
+            <Button size="xl" block disabled={!lines.length} loading={issuing} onClick={issue} icon={ReceiptText}>
               Izdaj račun
             </Button>
           </div>
@@ -167,13 +169,13 @@ export default function WaiterRegister() {
       {/* Mobile: total + primary action within thumb reach, above the bottom navigation */}
       {lines.length > 0 && <div className="h-20 lg:hidden" aria-hidden />}
       {lines.length > 0 && (
-        <div className="fixed inset-x-0 bottom-16 z-20 border-t border-line bg-surface px-4 py-3 shadow-lg lg:hidden">
+        <div className="fixed inset-x-0 bottom-16 z-20 border-t border-line bg-surface px-4 py-3 shadow-modal lg:hidden">
           <div className="mx-auto flex max-w-lg items-center gap-4">
             <div className="min-w-0">
               <p className="text-xs text-ink-muted">{itemCount} kom.</p>
-              <p className="text-lg font-semibold tabular text-ink">{formatMoney(totalCents)}</p>
+              <p className="text-lg font-bold text-ink">{formatMoney(totalCents)}</p>
             </div>
-            <Button size="lg" className="flex-1" loading={issuing} onClick={issue} icon={ReceiptText}>
+            <Button size="xl" className="flex-1" loading={issuing} onClick={issue} icon={ReceiptText}>
               Izdaj račun
             </Button>
           </div>
@@ -197,7 +199,7 @@ export default function WaiterRegister() {
               className="sm:h-11 sm:text-sm"
               onClick={() => navigate(`/konobar/bodovi?racun=${issued.id}`)}
             >
-              Dodijeli bodove gostu
+              Dodaj bodove gostu
             </Button>
           </>
         }
@@ -215,10 +217,15 @@ export default function WaiterRegister() {
   );
 }
 
+const PREVIEW = 6;
+
 function TodayReceipts({ receipts, onAward }) {
+  const [showAll, setShowAll] = useState(false);
+  const list = receipts.data ?? [];
+  const visible = showAll ? list : list.slice(0, PREVIEW);
   return (
     <Card className="mt-6">
-      <CardHeader title="Današnji računi" description="Računi izdani danas na ovoj lokaciji." />
+      <CardHeader title="Današnji računi" description="Izdani danas na ovoj lokaciji." />
       {receipts.loading ? (
         <SkeletonList rows={3} />
       ) : receipts.error ? (
@@ -226,29 +233,38 @@ function TodayReceipts({ receipts, onAward }) {
       ) : receipts.data.length === 0 ? (
         <EmptyState icon={ReceiptText} title="Danas još nema računa" description="Izdani računi pojavit će se ovdje." />
       ) : (
-        <ul className="divide-y divide-line">
-          {receipts.data.map((r) => (
-            <li key={r.id} className="flex flex-wrap items-center gap-3 px-4 py-3 sm:px-5">
+        <ul className="divide-y divide-line border-t border-line">
+          {visible.map((r) => (
+            <li key={r.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 sm:px-5">
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-ink">
+                <p className="text-sm font-semibold text-ink">
                   #{r.number} <span className="font-normal text-ink-muted">· {formatTime(r.paidAt)}</span>
                 </p>
                 <p className="truncate text-xs text-ink-muted">{r.items.map((i) => `${i.quantity}× ${i.name}`).join(', ')}</p>
               </div>
-              <span className="text-sm font-semibold tabular text-ink">{formatMoney(r.totalCents)}</span>
-              {r.awarded ? (
-                <Badge tone="success">
-                  {r.awarded.guestName} · +{r.awarded.points}
-                </Badge>
-              ) : r.isHappyHour ? (
-                <Badge tone="warning">Happy hour</Badge>
-              ) : (
-                <Button variant="secondary" onClick={() => onAward(r.id)}>
-                  Dodijeli bodove
-                </Button>
-              )}
+              <span className="text-sm font-semibold text-ink">{formatMoney(r.totalCents)}</span>
+              <span className="flex w-full justify-end sm:w-40">
+                {r.awarded ? (
+                  <Badge tone="success">
+                    {r.awarded.guestName.split(' ')[0]} · +{r.awarded.points}
+                  </Badge>
+                ) : r.isHappyHour ? (
+                  <Badge tone="warning">Happy hour</Badge>
+                ) : (
+                  <Button variant="secondary" size="sm" icon={ScanLine} onClick={() => onAward(r.id)}>
+                    Dodaj bodove
+                  </Button>
+                )}
+              </span>
             </li>
           ))}
+          {list.length > PREVIEW && (
+            <li className="p-3 text-center">
+              <Button variant="ghost" onClick={() => setShowAll((v) => !v)}>
+                {showAll ? 'Prikaži manje' : `Prikaži sve (${list.length})`}
+              </Button>
+            </li>
+          )}
         </ul>
       )}
     </Card>

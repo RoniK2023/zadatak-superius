@@ -8,7 +8,7 @@ const tones = {
   success: { icon: CheckCircle2, className: 'text-success' },
   error: { icon: XCircle, className: 'text-danger' },
   warning: { icon: TriangleAlert, className: 'text-warning' },
-  info: { icon: Info, className: 'text-ink-muted' },
+  info: { icon: Info, className: 'text-accent' },
 };
 
 export function ToastProvider({ children }) {
@@ -49,7 +49,7 @@ export function ToastProvider({ children }) {
             <div
               key={t.id}
               role={t.tone === 'error' ? 'alert' : 'status'}
-              className="pointer-events-auto flex w-full max-w-sm animate-toast-in items-start gap-3 rounded-lg border border-line bg-surface p-4 shadow-lg"
+              className="pointer-events-auto flex w-full max-w-sm animate-toast-in items-start gap-3 rounded-lg border border-line bg-surface p-4 shadow-modal"
             >
               <Icon className={cx('mt-0.5 h-5 w-5 shrink-0', className)} strokeWidth={2} aria-hidden />
               <div className="min-w-0 flex-1">

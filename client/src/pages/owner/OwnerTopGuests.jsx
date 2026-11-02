@@ -41,8 +41,11 @@ export default function OwnerTopGuests() {
 
   return (
     <>
-      <PageHeader title="Najbolji gosti" description="Članovi sortirani po potrošnji u odabranom razdoblju." />
-      <PeriodFilter filters={filters} update={update} locations={options.data?.locations} />
+      <PageHeader
+        title="Najbolji gosti"
+        description="Članovi sortirani po potrošnji u odabranom razdoblju."
+        actions={<PeriodFilter inline filters={filters} update={update} locations={options.data?.locations} />}
+      />
       <Card>
         {loading ? (
           <SkeletonList rows={8} />

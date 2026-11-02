@@ -52,14 +52,14 @@ export function Modal({ open, onClose, title, description, children, footer, siz
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-6">
-      <div className="absolute inset-0 bg-ink/40" onClick={onClose} aria-hidden />
+      <div className="absolute inset-0 bg-ink/50" onClick={onClose} aria-hidden />
       <div
         ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className={`relative flex max-h-[92vh] w-full flex-col rounded-t-xl bg-surface shadow-lg outline-none sm:rounded-xl ${width}`}
+        className={`relative flex max-h-[92vh] w-full flex-col rounded-t-xl bg-surface shadow-modal outline-none sm:rounded-xl ${width}`}
       >
         <div className="flex items-start justify-between gap-4 px-5 pb-2 pt-5">
           <div>
@@ -74,7 +74,7 @@ export function Modal({ open, onClose, title, description, children, footer, siz
         </div>
         <div className="overflow-y-auto px-5 py-3">{children}</div>
         {footer && (
-          <div className="pb-safe flex flex-col-reverse gap-2 border-t border-line px-5 py-4 sm:flex-row sm:justify-end">{footer}</div>
+          <div className="pb-safe flex flex-col-reverse gap-2 border-t border-line bg-canvas px-5 py-4 sm:flex-row sm:justify-end sm:rounded-b-xl">{footer}</div>
         )}
       </div>
     </div>,

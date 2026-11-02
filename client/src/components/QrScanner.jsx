@@ -96,7 +96,7 @@ export function QrScanner({ onCode, busy = false, disabled = false, submitLabel 
     <div className="space-y-5">
       <div>
         <div
-          className={active ? 'relative overflow-hidden rounded-lg border border-line bg-ink' : 'hidden'}
+          className={active ? 'relative overflow-hidden rounded-lg border border-line bg-black' : 'hidden'}
           aria-live="polite"
         >
           <div id={regionId} className="aspect-square w-full sm:aspect-video [&_video]:h-full [&_video]:w-full [&_video]:object-cover" />
@@ -105,12 +105,12 @@ export function QrScanner({ onCode, busy = false, disabled = false, submitLabel 
           )}
         </div>
         {active ? (
-          <Button variant="secondary" size="lg" block icon={CameraOff} className="mt-3" onClick={stop}>
+          <Button variant="secondary" size="xl" block icon={CameraOff} className="mt-3" onClick={stop}>
             Zaustavi kameru
           </Button>
         ) : (
           <Button
-            size="lg"
+            size="xl"
             block
             icon={Camera}
             disabled={disabled || busy}
@@ -129,9 +129,9 @@ export function QrScanner({ onCode, busy = false, disabled = false, submitLabel 
         )}
       </div>
 
-      <div className="flex items-center gap-3 text-xs font-medium uppercase tracking-wide text-ink-faint">
+      <div className="flex items-center gap-3 text-xs font-medium text-ink-muted">
         <span className="h-px flex-1 bg-line" />
-        ili ručni unos
+        ili upišite kod
         <span className="h-px flex-1 bg-line" />
       </div>
 
@@ -143,7 +143,7 @@ export function QrScanner({ onCode, busy = false, disabled = false, submitLabel 
           autoCapitalize="characters"
           autoComplete="off"
           spellCheck={false}
-          inputClassName="font-mono uppercase tracking-wider placeholder:font-sans placeholder:normal-case placeholder:tracking-normal"
+          inputClassName="h-12 font-mono text-base uppercase tracking-wider placeholder:font-sans placeholder:normal-case placeholder:tracking-normal"
           value={manual}
           onChange={(e) => {
             setManual(e.target.value);
@@ -152,7 +152,7 @@ export function QrScanner({ onCode, busy = false, disabled = false, submitLabel 
           error={manualError}
           disabled={disabled}
         />
-        <Button type="submit" variant="secondary" icon={Keyboard} loading={busy} disabled={disabled} className="sm:w-auto">
+        <Button type="submit" variant="secondary" size="lg" icon={Keyboard} loading={busy} disabled={disabled} className="sm:w-auto">
           {submitLabel}
         </Button>
       </form>

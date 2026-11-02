@@ -91,7 +91,7 @@ export default function OwnerRewards() {
         </span>
       ),
     },
-    { key: 'points', header: 'Bodovi', align: 'right', render: (r) => formatNumber(r.pointsCost) },
+    { key: 'points', header: 'Bodovi', align: 'right', mobile: 'hide', render: (r) => formatNumber(r.pointsCost) },
     { key: 'cost', header: 'Nabavna cijena', align: 'right', render: (r) => formatMoney(r.costPriceCents) },
     { key: 'perPoint', header: 'Trošak po bodu', align: 'right', render: (r) => formatMoney(r.costPriceCents / r.pointsCost) },
     { key: 'used', header: 'Iskorišteno', align: 'right', render: (r) => `${formatNumber(r.redeemedCount)}×` },
@@ -138,7 +138,12 @@ export default function OwnerRewards() {
             }
           />
         ) : (
-          <DataList columns={columns} rows={data} onRowClick={(r) => open(r)} />
+          <DataList
+            columns={columns}
+            rows={data}
+            onRowClick={(r) => open(r)}
+            mobileAside={(r) => <span className="text-sm font-semibold text-accent">{formatPoints(r.pointsCost)}</span>}
+          />
         )}
       </Card>
 

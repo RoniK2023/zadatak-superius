@@ -2,27 +2,59 @@ const ZONE = 'Europe/Zagreb';
 
 const money = new Intl.NumberFormat('hr-HR', { style: 'currency', currency: 'EUR' });
 const number = new Intl.NumberFormat('hr-HR');
-const dateFmt = new Intl.DateTimeFormat('hr-HR', { timeZone: ZONE, day: 'numeric', month: 'numeric', year: 'numeric' });
-const dateTimeFmt = new Intl.DateTimeFormat('hr-HR', {
-  timeZone: ZONE, day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit',
+const partsFmt = new Intl.DateTimeFormat('en-GB', {
+  timeZone: ZONE, day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
 });
-const timeFmt = new Intl.DateTimeFormat('hr-HR', { timeZone: ZONE, hour: '2-digit', minute: '2-digit' });
-const shortDateTimeFmt = new Intl.DateTimeFormat('hr-HR', {
-  timeZone: ZONE, day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit',
-});
+
+/** Calendar parts in Zagreb time (numeric, unpadded day and month). */
+function zagrebParts(d) {
+  const parts = Object.fromEntries(partsFmt.formatToParts(new Date(d)).map((p) => [p.type, p.value]));
+  return { day: Number(parts.day), month: Number(parts.month), year: parts.year, time: `${parts.hour}:${parts.minute}` };
+}
 
 export const formatMoney = (cents) => money.format((cents ?? 0) / 100);
 export const formatNumber = (n) => number.format(n ?? 0);
-export const formatDate = (d) => (d ? dateFmt.format(new Date(d)) : '—');
-export const formatDateTime = (d) => (d ? dateTimeFmt.format(new Date(d)) : '—');
-export const formatShortDateTime = (d) => (d ? shortDateTimeFmt.format(new Date(d)) : '—');
-export const formatTime = (d) => (d ? timeFmt.format(new Date(d)) : '—');
+
+/** "2. 11. 2026." */
+export function formatDate(d) {
+  if (!d) return '—';
+  const p = zagrebParts(d);
+  return `${p.day}. ${p.month}. ${p.year}.`;
+}
+
+/** "2. 11. 2026. 11:00" */
+export function formatDateTime(d) {
+  if (!d) return '—';
+  const p = zagrebParts(d);
+  return `${p.day}. ${p.month}. ${p.year}. ${p.time}`;
+}
+
+/** "2. 11. 11:00" — for dense lists within the current period. */
+export function formatShortDateTime(d) {
+  if (!d) return '—';
+  const p = zagrebParts(d);
+  return `${p.day}. ${p.month}. ${p.time}`;
+}
+
+/** "11:00" */
+export const formatTime = (d) => (d ? zagrebParts(d).time : '—');
+
+/** "studeni 2026." — month heading for grouped lists. */
+const monthFmt = new Intl.DateTimeFormat('hr-HR', { timeZone: ZONE, month: 'long', year: 'numeric' });
+export const formatMonth = (d) => {
+  const label = monthFmt.format(new Date(d));
+  return label.charAt(0).toUpperCase() + label.slice(1);
+};
+export const monthKey = (d) => {
+  const p = zagrebParts(d);
+  return `${p.year}-${String(p.month).padStart(2, '0')}`;
+};
 
 /** "2026-12-31" (a calendar day) → "31. 12. 2026." without time-zone shifts. */
 export function formatDay(isoDay) {
   if (!isoDay) return '—';
   const [y, m, d] = isoDay.split('-').map(Number);
-  return dateFmt.format(new Date(Date.UTC(y, m - 1, d, 12)));
+  return `${d}. ${m}. ${y}.`;
 }
 
 /** Croatian plural for "bod": 1 bod, 2 boda, 5 bodova, 21 bod, 22 boda. */

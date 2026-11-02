@@ -3,21 +3,21 @@ import { cx } from '../../lib/format.js';
 import { Button } from './Button.jsx';
 
 export function Skeleton({ className }) {
-  return <div className={cx('animate-shimmer rounded bg-subtle', className)} aria-hidden />;
+  return <div className={cx('animate-shimmer rounded-sm bg-subtle', className)} aria-hidden />;
 }
 
 /** Placeholder rows for lists / tables while loading. */
 export function SkeletonList({ rows = 5, className }) {
   return (
-    <div className={cx('divide-y divide-line', className)} role="status" aria-label="Učitavanje">
+    <div className={cx('divide-y divide-line border-t border-line', className)} role="status" aria-label="Učitavanje">
       {Array.from({ length: rows }, (_, i) => (
-        <div key={i} className="flex items-center gap-4 px-4 py-4 sm:px-5">
-          <Skeleton className="h-10 w-10 rounded-full" />
+        <div key={i} className="flex items-center gap-4 px-4 py-3.5 sm:px-5">
+          <Skeleton className="h-9 w-9 rounded-full" />
           <div className="flex-1 space-y-2">
-            <Skeleton className="h-4 w-1/3" />
+            <Skeleton className="h-3.5 w-1/3" />
             <Skeleton className="h-3 w-1/2" />
           </div>
-          <Skeleton className="h-4 w-16" />
+          <Skeleton className="h-3.5 w-14" />
         </div>
       ))}
     </div>
@@ -56,21 +56,21 @@ export function ErrorState({ error, onRetry, className }) {
   );
 }
 
-/** Inline notice (info / warning / danger / success). */
+/** Inline notice (neutral / accent / warning / danger / success). */
 export function Notice({ tone = 'neutral', icon: Icon, title, children, className }) {
   const tones = {
     neutral: 'bg-subtle border-line text-ink',
-    accent: 'bg-accent-soft border-accent-soft text-accent-ink',
-    warning: 'bg-warning-soft border-warning-soft text-warning',
-    danger: 'bg-danger-soft border-danger-soft text-danger',
-    success: 'bg-success-soft border-success-soft text-success',
+    accent: 'bg-accent-soft border-accent-line text-accent',
+    warning: 'bg-warning-soft border-warning-line text-warning',
+    danger: 'bg-danger-soft border-danger-line text-danger',
+    success: 'bg-success-soft border-success-line text-success',
   };
   return (
     <div className={cx('flex gap-3 rounded-md border px-4 py-3 text-sm', tones[tone], className)}>
       {Icon && <Icon className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />}
       <div className="min-w-0">
         {title && <p className="font-semibold">{title}</p>}
-        {children && <div className={cx(title && 'mt-0.5', 'opacity-90')}>{children}</div>}
+        {children && <div className={cx(title && 'mt-0.5', tone === 'neutral' ? 'text-ink-muted' : 'opacity-90')}>{children}</div>}
       </div>
     </div>
   );

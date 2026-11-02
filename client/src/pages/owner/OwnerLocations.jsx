@@ -101,28 +101,30 @@ function LocationsCard({ locations, onChanged }) {
       ) : locations.data.length === 0 ? (
         <EmptyState icon={MapPin} title="Nema lokacija" description="Dodajte prvu lokaciju." />
       ) : (
-        <ul className="divide-y divide-line">
+        <ul className="divide-y divide-line border-t border-line">
           {locations.data.map((l) => (
-            <li key={l.id} className="flex flex-wrap items-center gap-4 px-4 py-4 sm:px-5">
+            <li key={l.id} className="flex items-center gap-4 px-4 py-4 sm:px-5">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-subtle text-ink-muted">
                 <MapPin className="h-5 w-5" strokeWidth={1.75} aria-hidden />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="font-medium text-ink">{l.name}</p>
-                <p className="truncate text-sm text-ink-muted">
+                <p className="flex items-center gap-2 font-semibold text-ink">
+                  {l.name}
+                  <Badge tone={l.programEnabled ? 'success' : 'neutral'}>{l.programEnabled ? 'U programu' : 'Izvan programa'}</Badge>
+                </p>
+                <p className="mt-0.5 truncate text-sm text-ink-muted">
                   {l.address ? `${l.address} · ` : ''}
                   {l.waiterCount} {l.waiterCount === 1 ? 'konobar' : 'konobara'}
                 </p>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-36">
-                  <Switch
-                    label={l.programEnabled ? 'U programu' : 'Izvan programa'}
-                    checked={l.programEnabled}
-                    disabled={toggling === l.id}
-                    onChange={(on) => toggle(l, on)}
-                  />
-                </div>
+              <div className="flex shrink-0 items-center gap-1">
+                <Switch
+                  hideLabel
+                  label={`Program vjernosti na lokaciji ${l.name}`}
+                  checked={l.programEnabled}
+                  disabled={toggling === l.id}
+                  onChange={(on) => toggle(l, on)}
+                />
                 <Button variant="ghost" size="icon" onClick={() => open(l)} aria-label={`Uredi ${l.name}`}>
                   <Pencil className="h-4 w-4" aria-hidden />
                 </Button>
@@ -254,7 +256,7 @@ function WaitersCard({ waiters, locations, onChanged }) {
           }
         />
       ) : (
-        <ul className="divide-y divide-line">
+        <ul className="divide-y divide-line border-t border-line">
           {waiters.data.map((w) => (
             <li key={w.id}>
               <button type="button" onClick={() => open(w)} className="flex w-full items-center gap-4 px-4 py-4 text-left hover:bg-canvas sm:px-5">

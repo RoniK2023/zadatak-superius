@@ -80,8 +80,8 @@ export default function Register() {
   } else {
     body = (
       <>
-        <p className="text-sm font-medium text-accent">Postanite član</p>
-        <h1 className="mt-1 text-2xl font-semibold text-ink sm:text-3xl">{tenant.name}</h1>
+        <p className="text-xs font-semibold uppercase tracking-wider text-accent">Postanite član</p>
+        <h1 className="mt-1 text-xl font-semibold text-ink sm:text-2xl">{tenant.name}</h1>
         <p className="mt-2 text-sm text-ink-muted">
           Registracija traje pola minute. Odmah nakon nje dobivate svoj QR kod za skupljanje bodova
           {tenant.locations?.length ? ` na lokacijama: ${tenant.locations.map((l) => l.name).join(', ')}.` : '.'}
@@ -93,7 +93,7 @@ export default function Register() {
           </p>
         )}
 
-        <form onSubmit={onSubmit} noValidate className="mt-8 space-y-5">
+        <form onSubmit={onSubmit} noValidate className="mt-6 space-y-4">
           {submitError && <Notice tone="danger">{submitError}</Notice>}
           <Input label="Ime" autoComplete="given-name" value={form.name} onChange={set('name')} error={errors.name} />
           <Input
@@ -114,13 +114,15 @@ export default function Register() {
             error={errors.password}
             hint="Barem 8 znakova."
           />
-          <Button type="submit" size="lg" block loading={submitting}>
-            Registriraj se i preuzmi QR kod
-          </Button>
+          <div className="pt-2">
+            <Button type="submit" size="lg" block loading={submitting}>
+              Registriraj se i preuzmi QR kod
+            </Button>
+          </div>
         </form>
         <p className="mt-6 text-sm text-ink-muted">
           Već imate račun?{' '}
-          <Link to="/login" className="font-medium text-accent underline-offset-4 hover:underline">
+          <Link to="/login" className="font-semibold text-accent underline-offset-4 hover:underline">
             Prijavite se
           </Link>
         </p>
@@ -130,7 +132,9 @@ export default function Register() {
 
   return (
     <PublicLayout>
-      <div className="mx-auto w-full max-w-md px-4 py-10 sm:px-6 sm:py-16">{body}</div>
+      <div className="mx-auto w-full max-w-md px-4 py-10 sm:py-16">
+        <div className="rounded-xl border border-line bg-surface p-6 shadow-card sm:p-8">{body}</div>
+      </div>
     </PublicLayout>
   );
 }

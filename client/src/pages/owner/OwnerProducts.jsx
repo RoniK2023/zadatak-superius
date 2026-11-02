@@ -10,7 +10,7 @@ import { ConfirmDialog, Modal } from '../../components/ui/Modal.jsx';
 import { EmptyState, ErrorState, Notice, SkeletonList } from '../../components/ui/States.jsx';
 import { useToast } from '../../components/ui/Toast.jsx';
 import { api } from '../../lib/api.js';
-import { centsToInput, formatMoney, parseMoneyInput } from '../../lib/format.js';
+import { centsToInput, formatMoney, parseMoneyInput, pointsLabel } from '../../lib/format.js';
 import { useApi } from '../../lib/useApi.js';
 
 const EMPTY = { name: '', category: '', price: '', pointsPerItem: '0', active: true };
@@ -94,17 +94,21 @@ export default function OwnerProducts() {
       header: 'Artikl',
       mobile: 'title',
       render: (p) => (
-        <span className="flex items-center gap-2">
-          <span className="font-medium text-ink">{p.name}</span>
-          {!p.active && <Badge>Neaktivan</Badge>}
+        <span className="block">
+          <span className="flex items-center gap-2">
+            <span className="font-semibold text-ink">{p.name}</span>
+            {!p.active && <Badge>Neaktivan</Badge>}
+          </span>
+          <span className="block text-xs font-normal text-ink-muted md:hidden">{p.category}</span>
         </span>
       ),
     },
-    { key: 'category', header: 'Kategorija', render: (p) => p.category },
-    { key: 'price', header: 'Cijena', align: 'right', render: (p) => formatMoney(p.priceCents) },
+    { key: 'category', header: 'Kategorija', mobile: 'hide', className: 'text-ink-muted', render: (p) => p.category },
+    { key: 'price', header: 'Cijena', align: 'right', mobile: 'hide', render: (p) => formatMoney(p.priceCents) },
     {
       key: 'points',
       header: 'Bodova po artiklu',
+      mobile: 'hide',
       align: 'right',
       render: (p) => (p.pointsPerItem > 0 ? p.pointsPerItem : <span className="text-ink-muted">0</span>),
     },
@@ -158,7 +162,19 @@ export default function OwnerProducts() {
             }
           />
         ) : (
-          <DataList columns={columns} rows={data} onRowClick={(p) => open(p)} />
+          <DataList
+            columns={columns}
+            rows={data}
+            onRowClick={(p) => open(p)}
+            mobileAside={(p) => (
+              <span className="block">
+                <span className="block text-sm font-semibold text-ink">{formatMoney(p.priceCents)}</span>
+                <span className="block text-xs font-normal text-ink-muted">
+                  {p.pointsPerItem} {pointsLabel(p.pointsPerItem)}
+                </span>
+              </span>
+            )}
+          />
         )}
       </Card>
 

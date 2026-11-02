@@ -1,6 +1,6 @@
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import {
-  Ellipsis, Gift, History, LayoutDashboard, QrCode, ReceiptText, ScanLine, ScrollText,
+  Ellipsis, Gift, History, House, LayoutDashboard, QrCode, ReceiptText, ScanLine, ScrollText,
   Store, Trophy,
 } from 'lucide-react';
 import { AppShell } from './components/layout/AppShell.jsx';
@@ -16,6 +16,7 @@ import GuestCard from './pages/guest/GuestCard.jsx';
 import GuestRewards from './pages/guest/GuestRewards.jsx';
 import GuestHistory from './pages/guest/GuestHistory.jsx';
 
+import WaiterHome from './pages/waiter/WaiterHome.jsx';
 import WaiterRegister from './pages/waiter/WaiterRegister.jsx';
 import WaiterAward from './pages/waiter/WaiterAward.jsx';
 import WaiterRedeem from './pages/waiter/WaiterRedeem.jsx';
@@ -39,9 +40,10 @@ const GUEST_NAV = [
 ];
 
 const WAITER_NAV = [
-  { to: '/konobar', label: 'Blagajna (simulacija)', shortLabel: 'Blagajna', icon: ReceiptText, end: true },
-  { to: '/konobar/bodovi', label: 'Dodjela bodova', shortLabel: 'Bodovi', icon: ScanLine },
-  { to: '/konobar/nagrade', label: 'Iskorištavanje nagrade', shortLabel: 'Nagrade', icon: Gift },
+  { to: '/konobar', label: 'Početna', icon: House, end: true },
+  { to: '/konobar/blagajna', label: 'Blagajna (simulacija)', shortLabel: 'Blagajna', icon: ReceiptText },
+  { to: '/konobar/bodovi', label: 'Dodaj bodove', shortLabel: 'Bodovi', icon: ScanLine },
+  { to: '/konobar/nagrade', label: 'Iskoristi nagradu', shortLabel: 'Nagrade', icon: Gift },
 ];
 
 
@@ -49,7 +51,7 @@ const OWNER_NAV = [
   { to: '/vlasnik', label: 'Pregled', icon: LayoutDashboard, end: true },
   { to: '/vlasnik/gosti', label: 'Najbolji gosti', shortLabel: 'Gosti', icon: Trophy },
   { to: '/vlasnik/aktivnost', label: 'Aktivnost', icon: ScrollText },
-  ...OWNER_SECONDARY_NAV.map((item) => ({ ...item, mobile: false })),
+  ...OWNER_SECONDARY_NAV.map((item, i) => ({ ...item, mobile: false, divider: i === 0 })),
   { to: '/vlasnik/vise', label: 'Više', icon: Ellipsis, mobileOnly: true },
 ];
 
@@ -103,7 +105,8 @@ export default function App() {
           </RequireRole>
         }
       >
-        <Route index element={<WaiterRegister />} />
+        <Route index element={<WaiterHome />} />
+        <Route path="blagajna" element={<WaiterRegister />} />
         <Route path="bodovi" element={<WaiterAward />} />
         <Route path="nagrade" element={<WaiterRedeem />} />
       </Route>

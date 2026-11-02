@@ -13,12 +13,20 @@ export function DataList({ columns, rows, rowKey = (r) => r.id, onRowClick, rowC
 
   return (
     <>
-      <div className="hidden overflow-x-auto md:block">
+      <div className="hidden overflow-x-auto border-t border-line md:block">
         <table className="w-full text-left text-sm">
-          <thead>
-            <tr className="border-b border-line text-xs font-medium uppercase tracking-wide text-ink-muted">
+          <thead className="bg-canvas">
+            <tr className="border-b border-line">
               {columns.map((col) => (
-                <th key={col.key} scope="col" className={cx('px-5 py-3 font-medium', col.align === 'right' && 'text-right', col.headerClassName)}>
+                <th
+                  key={col.key}
+                  scope="col"
+                  className={cx(
+                    'h-10 whitespace-nowrap px-5 text-xs font-medium text-ink-muted first:pl-5',
+                    col.align === 'right' && 'text-right',
+                    col.headerClassName,
+                  )}
+                >
                   {col.header}
                 </th>
               ))}
@@ -29,10 +37,10 @@ export function DataList({ columns, rows, rowKey = (r) => r.id, onRowClick, rowC
               <tr
                 key={rowKey(row)}
                 onClick={onRowClick ? () => onRowClick(row) : undefined}
-                className={cx(onRowClick && 'cursor-pointer hover:bg-canvas', rowClassName?.(row))}
+                className={cx('transition-colors hover:bg-canvas', onRowClick && 'cursor-pointer', rowClassName?.(row))}
               >
                 {columns.map((col) => (
-                  <td key={col.key} className={cx('px-5 py-3 align-middle', col.align === 'right' && 'text-right tabular', col.className)}>
+                  <td key={col.key} className={cx('h-12 px-5 py-2.5 align-middle text-ink', col.align === 'right' && 'text-right', col.className)}>
                     {value(col, row)}
                   </td>
                 ))}
@@ -42,16 +50,16 @@ export function DataList({ columns, rows, rowKey = (r) => r.id, onRowClick, rowC
         </table>
       </div>
 
-      <ul className="divide-y divide-line md:hidden">
+      <ul className="divide-y divide-line border-t border-line md:hidden">
         {rows.map((row) => {
           const content = (
             <>
               <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0 font-medium text-ink">{titleCols.map((c) => <div key={c.key}>{value(c, row)}</div>)}</div>
+                <div className="min-w-0 text-sm font-semibold text-ink">{titleCols.map((c) => <div key={c.key}>{value(c, row)}</div>)}</div>
                 {mobileAside && <div className="shrink-0 text-right">{mobileAside(row)}</div>}
               </div>
               {metaCols.length > 0 && (
-                <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
+                <dl className="mt-2.5 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                   {metaCols.map((c) => (
                     <div key={c.key} className="min-w-0">
                       <dt className="text-xs text-ink-muted">{c.header}</dt>
@@ -65,11 +73,11 @@ export function DataList({ columns, rows, rowKey = (r) => r.id, onRowClick, rowC
           return (
             <li key={rowKey(row)} className={rowClassName?.(row)}>
               {onRowClick ? (
-                <button type="button" onClick={() => onRowClick(row)} className="block w-full px-4 py-4 text-left hover:bg-canvas">
+                <button type="button" onClick={() => onRowClick(row)} className="block w-full px-4 py-3.5 text-left hover:bg-canvas">
                   {content}
                 </button>
               ) : (
-                <div className="px-4 py-4">{content}</div>
+                <div className="px-4 py-3.5">{content}</div>
               )}
             </li>
           );

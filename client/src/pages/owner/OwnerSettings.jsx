@@ -122,7 +122,7 @@ export default function OwnerSettings() {
         <div className="space-y-6">
           {[0, 1, 2].map((i) => (
             <Card key={i}>
-              <CardBody className="space-y-4">
+              <CardBody className="space-y-4 border-t border-line">
                 <Skeleton className="h-5 w-40" />
                 <Skeleton className="h-11 w-full max-w-md" />
                 <Skeleton className="h-11 w-full max-w-xs" />
@@ -137,7 +137,7 @@ export default function OwnerSettings() {
   const programLocations = locations.data?.filter((l) => l.programEnabled).map((l) => l.name) ?? [];
 
   return (
-    <form onSubmit={save} noValidate>
+    <form onSubmit={save} noValidate className="max-w-3xl">
       <PageHeader
         title="Postavke programa"
         description="Pravila bodovanja, istek bodova, happy hour i zaštita od zloupotrebe."
@@ -151,7 +151,7 @@ export default function OwnerSettings() {
       <div className="space-y-6">
         <Card>
           <CardHeader title="Bodovanje" description="Kako gost zarađuje bodove uz račun." />
-          <CardBody className="space-y-5">
+          <CardBody className="space-y-5 border-t border-line">
             <Segmented
               value={form.earningMode}
               onChange={set('earningMode')}
@@ -187,7 +187,7 @@ export default function OwnerSettings() {
 
         <Card>
           <CardHeader title="Istek bodova" description="Kad istek nastupi, gostu se svi bodovi resetiraju na nulu." />
-          <CardBody className="space-y-5">
+          <CardBody className="space-y-5 border-t border-line">
             <Segmented
               value={form.expiryMode}
               onChange={set('expiryMode')}
@@ -257,7 +257,7 @@ export default function OwnerSettings() {
 
         <Card>
           <CardHeader title="Happy hour" description="U happy houru nema bodova ni nagrada (nema popusta na popust)." />
-          <CardBody className="space-y-5">
+          <CardBody className="space-y-5 border-t border-line">
             <Switch label="Happy hour uključen" checked={form.happyHourEnabled} onChange={set('happyHourEnabled')} />
             <fieldset disabled={!form.happyHourEnabled} className={cx('space-y-5', !form.happyHourEnabled && 'opacity-60')}>
               <div className="grid max-w-md grid-cols-2 gap-3">
@@ -281,7 +281,7 @@ export default function OwnerSettings() {
                         }
                         className={cx(
                           'h-11 w-12 rounded-md border text-sm font-medium transition-colors',
-                          on ? 'border-accent bg-accent-soft text-accent-ink' : 'border-line-strong bg-surface text-ink-muted hover:text-ink',
+                          on ? 'border-accent bg-accent-soft text-accent' : 'border-line-strong bg-surface text-ink-muted hover:text-ink',
                         )}
                       >
                         {label}
@@ -297,7 +297,7 @@ export default function OwnerSettings() {
 
         <Card>
           <CardHeader title="Zaštita od zloupotrebe" description="Prag za označavanje sumnjivih aktivnosti u logu." />
-          <CardBody className="space-y-4">
+          <CardBody className="space-y-4 border-t border-line">
             <Input
               label="Najviše dodjela bodova po gostu dnevno"
               className="max-w-xs"
@@ -312,7 +312,7 @@ export default function OwnerSettings() {
 
         <Card>
           <CardHeader title="Lokacije u programu" />
-          <CardBody className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <CardBody className="flex flex-col gap-3 border-t border-line sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-ink">
               {locations.loading ? 'Učitavanje…' : programLocations.length ? programLocations.join(', ') : 'Nijedna lokacija nije u programu.'}
             </p>

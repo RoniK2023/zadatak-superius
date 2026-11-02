@@ -33,15 +33,15 @@ export default function Landing() {
 
   return (
     <PublicLayout actions={<ButtonLink to="/login" variant="secondary">Prijava</ButtonLink>}>
-      <section className="mx-auto grid max-w-content gap-10 px-4 py-10 sm:px-6 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16 lg:py-20">
+      <section className="mx-auto grid max-w-content gap-10 px-4 py-10 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:py-20">
         <div>
-          <p className="text-sm font-medium text-accent">Program vjernosti</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-accent">Program vjernosti</p>
           {loading ? (
             <Skeleton className="mt-3 h-10 w-3/4" />
           ) : (
-            <h1 className="mt-2 text-3xl font-semibold text-ink sm:text-4xl">{tenant?.name ?? 'Mandrač Loyalty'}</h1>
+            <h1 className="mt-3 text-2xl font-semibold text-ink">{tenant?.name ?? 'Mandrač Loyalty'}</h1>
           )}
-          <p className="mt-4 max-w-xl text-base text-ink-muted sm:text-lg">
+          <p className="mt-3 max-w-lg text-base text-ink-muted">
             Skupljajte bodove uz svaki račun i zamijenite ih za kavu ili piće na nama. {tenant ? earning : ''}
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -56,11 +56,11 @@ export default function Landing() {
           <ol className="mt-12 space-y-6">
             {steps.map(({ icon: Icon, title, text }, i) => (
               <li key={title} className="flex gap-4">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-line bg-surface text-ink-muted">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-accent-soft text-accent">
                   <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
                 </span>
                 <div>
-                  <p className="font-medium text-ink">
+                  <p className="text-sm font-semibold text-ink">
                     <span className="text-ink-muted">{i + 1}. </span>
                     {title}
                   </p>
@@ -71,27 +71,29 @@ export default function Landing() {
           </ol>
         </div>
 
-        <aside className="self-start rounded-lg border border-line bg-surface p-5 shadow-sm sm:p-6">
-          <h2 className="text-base font-semibold text-ink">Nagrade</h2>
-          <p className="mt-1 text-sm text-ink-muted">Bodovi vrijede na svim lokacijama uključenima u program.</p>
-          <ul className="mt-4 divide-y divide-line">
+        <aside className="self-start overflow-hidden rounded-xl border border-line bg-surface shadow-card">
+          <div className="bg-accent px-6 py-5 text-white">
+            <p className="text-xs font-semibold uppercase tracking-wider text-white/75">Nagrade</p>
+            <p className="mt-1 text-lg font-semibold">Bodove mijenjate za piće na nama</p>
+          </div>
+          <ul className="divide-y divide-line px-6">
             {loading &&
               [0, 1, 2].map((i) => (
-                <li key={i} className="flex justify-between py-3">
+                <li key={i} className="flex justify-between py-4">
                   <Skeleton className="h-4 w-32" />
                   <Skeleton className="h-4 w-16" />
                 </li>
               ))}
             {tenant?.rewards?.map((r) => (
-              <li key={r.name} className="flex items-center justify-between py-3 text-sm">
-                <span className="font-medium text-ink">{r.name}</span>
-                <span className="tabular text-ink-muted">{formatPoints(r.pointsCost)}</span>
+              <li key={r.name} className="flex items-center justify-between py-4 text-sm">
+                <span className="font-semibold text-ink">{r.name}</span>
+                <span className="font-medium text-ink-muted">{formatPoints(r.pointsCost)}</span>
               </li>
             ))}
           </ul>
           {tenant?.locations?.length > 0 && (
-            <p className="mt-4 border-t border-line pt-4 text-sm text-ink-muted">
-              Lokacije: <span className="text-ink">{tenant.locations.map((l) => l.name).join(', ')}</span>
+            <p className="border-t border-line bg-canvas px-6 py-4 text-xs text-ink-muted">
+              Bodovi vrijede na svim lokacijama: <span className="font-semibold text-ink">{tenant.locations.map((l) => l.name).join(', ')}</span>
             </p>
           )}
         </aside>
