@@ -262,7 +262,3 @@ Potpuni reset podataka: `docker compose down -v` (briše bazu; sljedeće pokreta
 ## Stack
 
 React (JSX, Vite, Tailwind) · Express 5 (JavaScript, ES moduli) · PostgreSQL + Prisma · Vitest · Docker Compose
-
-## Rad s AI-jem
-
-Vidi [`AI_LOG.md`](AI_LOG.md).
