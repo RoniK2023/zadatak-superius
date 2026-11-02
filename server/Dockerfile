@@ -2,9 +2,9 @@ FROM node:22-bookworm-slim
 RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci
+# The schema must be present before npm ci: the postinstall hook runs "prisma generate".
 COPY prisma ./prisma
-RUN npx prisma generate
+RUN npm ci
 COPY . .
 ENV NODE_ENV=production
 EXPOSE 4000
