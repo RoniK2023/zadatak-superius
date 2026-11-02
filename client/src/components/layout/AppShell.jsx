@@ -101,7 +101,7 @@ export function AppShell({ nav, contextLabel }) {
           </div>
         </header>
 
-        <main className="pb-28 lg:pb-12 lg:pl-64">
+        <main className="min-w-0 pb-28 lg:pb-12 lg:pl-64">
           <div className="mx-auto w-full max-w-content px-4 py-5 sm:px-6 lg:px-10 lg:py-10">
             <Outlet />
           </div>

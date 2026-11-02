@@ -23,6 +23,12 @@
   .tabular {
     font-variant-numeric: tabular-nums;
   }
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
   .pb-safe {
     padding-bottom: env(safe-area-inset-bottom);
   }
