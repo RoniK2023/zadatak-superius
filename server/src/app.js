@@ -6,6 +6,8 @@ import { publicRouter } from './routes/public.js';
 import { waiterRouter } from './routes/waiter.js';
 import { guestRouter } from './routes/guest.js';
 import { ownerRouter } from './routes/owner.js';
+import { ownerAdminRouter } from './routes/ownerAdmin.js';
+import { adminRouter } from './routes/admin.js';
 
 export function createApp() {
   const app = express();
@@ -19,6 +21,8 @@ export function createApp() {
   app.use('/api/waiter', waiterRouter);
   app.use('/api/guest', guestRouter);
   app.use('/api/owner', ownerRouter);
+  app.use('/api/owner', ownerAdminRouter);
+  app.use('/api/admin', adminRouter);
 
   app.use('/api', (_req, res) => res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Nepostojeća ruta.' } }));
   app.use(errorHandler);

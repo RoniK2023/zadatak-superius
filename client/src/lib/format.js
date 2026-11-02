@@ -44,3 +44,13 @@ export function zagrebToday(offsetDays = 0) {
 }
 
 export const cx = (...classes) => classes.filter(Boolean).join(' ');
+
+/** 240 → "2,40" (for inputs). */
+export const centsToInput = (cents) => ((cents ?? 0) / 100).toFixed(2).replace('.', ',');
+
+/** "2,40" / "2.4" / "2" → 240; returns NaN for invalid input. */
+export function parseMoneyInput(value) {
+  const normalized = String(value ?? '').trim().replace(/\s/g, '').replace(',', '.');
+  if (!/^\d+(\.\d{1,2})?$/.test(normalized)) return NaN;
+  return Math.round(Number(normalized) * 100);
+}
